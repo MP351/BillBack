@@ -30,9 +30,6 @@ import java.util.*
 fun main() {
     BasicConfigurator.configure()
     Class.forName("org.sqlite.JDBC")
-//    val inputTest = "08-03-2020;13-00-54;8613;8613999V;800692509872;140;Семенова Ирина Николаевна;450,00;436,50;13,50;\n" +
-//            "09-03-2020;09-13-31;8613;9900000V;525496874902;62;Беспалова Лидия константиновна;450,00;436,50;13,50;\n" +
-//            "=2;900,00;873,00;27,00;291467;10-03-2020;\n"
 //    db.DbConnection.getInstance().initDb()
 //
 //    watcher.Watcher("/home/maxpayne/Share/SberTest").isRunning = true
