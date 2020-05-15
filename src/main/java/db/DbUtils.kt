@@ -2,21 +2,28 @@ package db
 
 import LoginEntity
 import LoginEntitySber
+import MonthlySummary
+import PaymentEntity
 import PaymentEntitySber
 import SuspendEntity
 import SuspendEntitySber
 import TariffEntity
 import TariffEntitySber
+import UserWithTariffEntity
 import UsersEntity
 import UsersEntitySber
+import io.ktor.util.url
 import java.math.BigDecimal
 import java.sql.DriverManager
 import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class DbConnection private constructor() {
     private val dbVersion = 1
     private val url = "jdbc:sqlite:payments_$dbVersion.db"
-    private val dateFormatter = SimpleDateFormat("YYYY-MM-DD HH:MM:SS.SSS")
+    private val dateFormatter = SimpleDateFormat("YYYY-mm-DD HH:MM:SS.SSS")
 
 
     fun initDb() {
@@ -26,6 +33,8 @@ class DbConnection private constructor() {
             it.createStatement().execute(UsersContract.SQL_CREATE_ENTRIES)
             it.createStatement().execute(SuspendsContract.SQL_CREATE_ENTRIES)
             it.createStatement().execute(LoginContract.SQL_CREATE_ENTRIES)
+            it.createStatement().execute(MonthlyClosingContract.SQL_CREATE_ENTRIES)
+            it.createStatement().execute(TariffsHistoryContract.SQL_CREATE_ENTRIES)
         }
     }
 
@@ -44,7 +53,7 @@ class DbConnection private constructor() {
                     setInt(9, (incomeAmountNum.multiply(BigDecimal(100))).toInt())
                     setInt(10, (commissionAmountNum.multiply(BigDecimal(100))).toInt())
                 }
-            }
+            }.execute()
         }
     }
 
@@ -132,6 +141,19 @@ class DbConnection private constructor() {
         }
     }
 
+    fun getUsersWithTariffs(): ArrayList<UserWithTariffEntity> {
+        DriverManager.getConnection(url).use {
+            return with(it.createStatement().executeQuery("select users._ID as _id, users.name as name, " +
+                    "tariffs.name as tariff, active from users inner join tariffs on tariffs._ID = users.tariff_id;")) {
+                val list = ArrayList<UserWithTariffEntity>()
+                while (next()) {
+                    list.add(UserWithTariffEntity(getInt("_ID"), getString("name"), getString("tariff"), getInt("active")))
+                }
+                list
+            }
+        }
+    }
+
     fun getTariffs(): ArrayList<TariffEntity> {
         DriverManager.getConnection(url).use {
             return with(it.createStatement().executeQuery("SELECT * FROM ${TariffsContract.TABLE_NAME}")) {
@@ -150,6 +172,58 @@ class DbConnection private constructor() {
                 val list = ArrayList<SuspendEntity>()
                 while (next()) {
                     list.add(SuspendEntity(getInt("_ID"), getInt(SuspendsContract.COLUMN_NAME_USER_ID), getString(SuspendsContract.COLUMN_NAME_BEGIN_DATE), getString(SuspendsContract.COLUMN_NAME_END_DATE)))
+                }
+                list
+            }
+        }
+    }
+
+    fun getPayments(): List<PaymentEntity> {
+        DriverManager.getConnection(url).use {
+            return with(it.createStatement().executeQuery("SELECT * from ${PaymentsContract.TABLE_NAME}")) {
+                val list = ArrayList<PaymentEntity>()
+                while (next()) {
+                    list.add(PaymentEntity(getInt("_ID"), getString(PaymentsContract.COLUMN_NAME_DATE),
+                            getString(PaymentsContract.COLUMN_NAME_TIME), getString(PaymentsContract.COLUMN_NAME_DIV_NUM),
+                    getString(PaymentsContract.COLUMN_NAME_CASHIER_NUM), getString(PaymentsContract.COLUMN_NAME_OPCODE),
+                    getInt(PaymentsContract.COLUMN_NAME_CONTRACT_NUMBER), getString(PaymentsContract.COLUMN_NAME_NAME),
+                    getInt(PaymentsContract.COLUMN_NAME_TOTAL_AMOUNT), getInt(PaymentsContract.COLUMN_NAME_INCOME_AMOUNT),
+                    getInt(PaymentsContract.COLUMN_NAME_COMMISSION_AMOUNT)))
+                }
+                list
+            }
+        }
+    }
+
+    // "SELECT monthly_closing.user_id as user_id, " +
+    // "users.name as username, " +
+    // "monthly_summary.sum as sum " +
+    // "from monthly_summary inner join users on monthly_summary.user_id = users._id"
+    // Date should be in format mm-YYYY
+    fun getMonthlySummary(date: String? = null): List<MonthlySummary> {
+        val dateFormat = SimpleDateFormat("mm-YYYY")
+
+        DriverManager.getConnection(url).use {
+            return with(it.createStatement().executeQuery(
+                    with(MonthlyClosingContract) {
+                        "SELECT $TABLE_NAME.$COLUMN_NAME_USER_ID AS user_id," +
+                                "${UsersContract.COLUMN_NAME_NAME}.${UsersContract.COLUMN_NAME_NAME} AS username," +
+                                "$TABLE_NAME.$COLUMN_NAME_SUM AS sum " +
+                                "FROM $TABLE_NAME INNER JOIN ${UsersContract.TABLE_NAME} " +
+                                "ON $TABLE_NAME.$COLUMN_NAME_USER_ID = ${UsersContract.TABLE_NAME}._ID " +
+                                "WHERE $COLUMN_NAME_MONTH_DATE = ${date ?: dateFormat.format(Date())}"
+                    }
+            )) {
+                val list = ArrayList<MonthlySummary>()
+                while(next()) {
+                    list.add(
+                            MonthlySummary(
+                                    getInt("_ID"),
+                                    getString(MonthlyClosingContract.COLUMN_NAME_MONTH_DATE),
+                                    getInt(MonthlyClosingContract.COLUMN_NAME_USER_ID),
+                                    getInt(MonthlyClosingContract.COLUMN_NAME_SUM)
+                            )
+                    )
                 }
                 list
             }
@@ -252,4 +326,38 @@ object LoginContract {
             "$COLUMN_NAME_PASSWORD TEXT NOT NULL)"
 
     const val SQL_DATE_INSERT = "INSET INTO $TABLE_NAME($COLUMN_NAME_LOGIN, $COLUMN_NAME_PASSWORD) VALUES(?, ?)"
+}
+
+object MonthlyClosingContract {
+    const val TABLE_NAME = "monthly_summary"
+    const val COLUMN_NAME_MONTH_DATE = "month_date"
+    const val COLUMN_NAME_USER_ID = "user_id"
+    const val COLUMN_NAME_SUM = "sum"
+
+    const val SQL_CREATE_ENTRIES = "CREATE TABLE IF NOT EXISTS $TABLE_NAME(" +
+            "_ID INTEGER PRIMARY KEY NOT NULL," +
+            "$COLUMN_NAME_MONTH_DATE TEXT NOT NULL," +
+            "$COLUMN_NAME_USER_ID INTEGER NOT NULL," +
+            "$COLUMN_NAME_SUM INTEGER NOT NULL)"
+
+    const val SQL_DATA_INSERT = "INSERT INTO $TABLE_NAME($COLUMN_NAME_MONTH_DATE, $COLUMN_NAME_USER_ID, $COLUMN_NAME_SUM)" +
+            "VALUES(?, ?, ?)"
+}
+
+object TariffsHistoryContract {
+    const val TABLE_NAME = "tariffs_history"
+    const val COLUMN_NAME_TARIFF_ID = "tariff_id"
+    const val COLUMN_NAME_USER_ID = "user_id"
+    const val COLUMN_NAME_BEGIN_DATE = "begin_date"
+    const val COLUMN_NAME_END_DATE = "end_date"
+
+    const val SQL_CREATE_ENTRIES = "CREATE TABLE IF NOT EXISTS $TABLE_NAME(" +
+            "_ID INTEGER PRIMARY KEY NOT NULL," +
+            "$COLUMN_NAME_USER_ID INTEGER NOT NULL," +
+            "$COLUMN_NAME_TARIFF_ID INTEGER NOT NULL," +
+            "$COLUMN_NAME_BEGIN_DATE TEXT NOT NULL," +
+            "$COLUMN_NAME_END_DATE TEXT)"
+
+    const val SQL_DATA_INSERT = "INSERT INTO $TABLE_NAME($COLUMN_NAME_USER_ID, $COLUMN_NAME_TARIFF_ID, $COLUMN_NAME_BEGIN_DATE, $COLUMN_NAME_END_DATE)" +
+            "VALUES(?, ?, ?, ?)"
 }

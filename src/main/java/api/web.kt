@@ -7,16 +7,15 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.fasterxml.jackson.databind.SerializationFeature
 import db.DbConnection
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.call
-import io.ktor.application.install
+import io.ktor.application.*
 import io.ktor.auth.Authentication
 import io.ktor.auth.UserIdPrincipal
 import io.ktor.auth.authenticate
 import io.ktor.auth.jwt.jwt
 import io.ktor.auth.principal
+import io.ktor.client.request.request
 import io.ktor.features.ContentNegotiation
+import io.ktor.http.Parameters
 import io.ktor.jackson.jackson
 import io.ktor.request.receive
 import io.ktor.response.respond
@@ -85,12 +84,19 @@ fun Application.webModule() {
                 }
 
                 get("users") {
-                    call.respond(dbEntity.getUsers())
+                    if (call.parameters["tariff"].equals("true"))
+                        call.respond(dbEntity.getUsersWithTariffs())
+                    else
+                        call.respond(dbEntity.getUsers())
                 }
 
                 post("users") {
                     dbEntity.insertUser(call.receive())
                     call.respond(mapOf("OK" to true))
+                }
+
+                get("payments") {
+                    call.respond(dbEntity.getPayments())
                 }
             }
         }

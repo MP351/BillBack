@@ -1,28 +1,19 @@
 
 import api.webModule
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
 import db.DbConnection
 import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.auth.jwt.jwt
 import io.ktor.features.ContentNegotiation
-import io.ktor.features.StatusPages
 import io.ktor.html.respondHtml
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
 import io.ktor.request.receive
 import io.ktor.response.respond
-import io.ktor.response.respondText
-import io.ktor.routing.get
 import io.ktor.routing.post
-import io.ktor.routing.route
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import io.ktor.util.AttributeKey
-import io.netty.handler.codec.http2.Http2Error
 import kotlinx.html.*
 import org.apache.log4j.BasicConfigurator
 import java.util.*
@@ -30,17 +21,12 @@ import java.util.*
 fun main() {
     BasicConfigurator.configure()
     Class.forName("org.sqlite.JDBC")
-//    db.DbConnection.getInstance().initDb()
 //
-//    watcher.Watcher("/home/maxpayne/Share/SberTest").isRunning = true
+    watcher.Watcher("/home/maxpayne/Share/SberTest").isRunning = true
     DbConnection.getInstance().initDb()
-    val dbEntity = DbConnection.getInstance().getLogins().forEach {
-        println(it)
-    }
-    val server = embeddedServer(Netty, port = 8080) {
+    embeddedServer(Netty, port = 8080) {
         webModule()
     }.start(true)
-    println(DbConnection.getInstance().getLogins())
 }
 
 fun Application.mymodule() {
