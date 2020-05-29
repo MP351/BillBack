@@ -3,7 +3,6 @@ package watcher
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit

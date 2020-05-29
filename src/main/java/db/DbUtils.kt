@@ -9,10 +9,11 @@ import SuspendEntity
 import SuspendEntitySber
 import TariffEntity
 import TariffEntitySber
+import TariffHistory
 import UserWithTariffEntity
 import UsersEntity
 import UsersEntitySber
-import io.ktor.util.url
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.math.BigDecimal
 import java.sql.DriverManager
 import java.text.SimpleDateFormat
@@ -199,9 +200,9 @@ class DbConnection private constructor() {
     // "users.name as username, " +
     // "monthly_summary.sum as sum " +
     // "from monthly_summary inner join users on monthly_summary.user_id = users._id"
-    // Date should be in format mm-YYYY
+    // Date should be in format YYYY-mm
     fun getMonthlySummary(date: String? = null): List<MonthlySummary> {
-        val dateFormat = SimpleDateFormat("mm-YYYY")
+        val dateFormat = SimpleDateFormat("YYYY-mm")
 
         DriverManager.getConnection(url).use {
             return with(it.createStatement().executeQuery(
@@ -228,6 +229,147 @@ class DbConnection private constructor() {
                 list
             }
         }
+    }
+
+    // Params: @month yyyy-MM-dd dome date in month
+    fun getMonthlySum(month: String): Int {
+//        val beginMonth = getBeginOfMonth(month)
+//        val tariffs = getTariffsInMonth(beginMonth)
+//        var sum = 0
+//
+//        for (tariff in tariffs) {
+//
+//        }
+//
+        return 0
+    }
+
+    fun getSuspendsInPeriod(begin: String, end: String, id: Int): List<SuspendEntity> {
+        val beginDateField = "begin_suspension"
+        val endDateField = "end_suspension"
+
+        DriverManager.getConnection(url).use {
+            return with(it.createStatement().executeQuery(
+                    with(SuspendsContract) {
+                        "SELECT " +
+                                "_ID," +
+                                "$COLUMN_NAME_USER_ID," +
+                                "CASE WHEN DATE($COLUMN_NAME_BEGIN_DATE) > DATE($begin) THEN DATE($COLUMN_NAME_BEGIN_DATE) " +
+                                    "ELSE DATE($begin) END AS begin_suspension," +
+                                "CASE WHEN DATE($COLUMN_NAME_END_DATE) IS NULL THEN $end " +
+                                    "WHEN DATE($COLUMN_NAME_END_DATE) > DATE($end) THEN $end " +
+                                    "ELSE $COLUMN_NAME_END_DATE END AS end_suspension " +
+                                "FROM $TABLE_NAME WHERE " +
+                                    "$COLUMN_NAME_USER_ID = $id AND "
+                                    "DATE($COLUMN_NAME_END_DATE) BETWEEN DATE($begin) AND DATE($end) OR " +
+                                    "DATE($COLUMN_NAME_BEGIN_DATE) BETWEEN DATE($begin) AND DATE($end) OR " +
+                                    "DATE($begin) BETWEEN DATE($COLUMN_NAME_BEGIN_DATE) AND DATE($COLUMN_NAME_END_DATE)"
+                    }
+            )) {
+                val list = ArrayList<SuspendEntity>()
+
+                while (next()) {
+                    list.add(SuspendEntity(
+                            getInt("_ID"),
+                            getInt(SuspendsContract.COLUMN_NAME_USER_ID),
+                            getString(beginDateField),
+                            getString(endDateField)
+                    ))
+                }
+                list
+            }
+        }
+    }
+
+    // Dates should be in yyyy-MM-dd format
+    fun getTariffsInMonth(begin: String, id: Int): List<TariffHistory> {
+        val beginDateField = "begin_dates"
+        val endDateField = "end_dates"
+        DriverManager.getConnection(url).use {
+            return with(it.createStatement().executeQuery(
+                    with(TariffsHistoryContract) {
+                        "SELECT " +
+                                "_ID," +
+                                "$COLUMN_NAME_USER_ID," +
+                                "$COLUMN_NAME_TARIFF_ID," +
+                                "CASE WHEN th.$COLUMN_NAME_BEGIN_DATE > begin_month THEN th.$COLUMN_NAME_BEGIN_DATE ELSE begin_month END AS $beginDateField," +
+                                "CASE WHEN th.$COLUMN_NAME_END_DATE IS NULL THEN end_month " +
+                                    "WHEN th.$COLUMN_NAME_END_DATE > end_month THEN end_month ELSE th.$COLUMN_NAME_END_DATE END AS $endDateField " +
+                                "FROM(" +
+                                    "SELECT * FROM $TABLE_NAME, (" +
+                                        "SELECT DATE($begin) AS begin_month," +
+                                            "DATE($begin, '+1 month') AS end_month" +
+                                        ") WHERE " +
+                                            "$COLUMN_NAME_USER_ID = $id AND " +
+                                            "DATE($COLUMN_NAME_END_DATE) BETWEEN begin_month AND end_month or " +
+                                            "DATE($COLUMN_NAME_BEGIN_DATE) BETWEEN begin_month and end_month or " +
+                                            "begin_month BETWEEN DATE($COLUMN_NAME_BEGIN_DATE) AND DATE($COLUMN_NAME_END_DATE)"
+                                ") AS th"
+                    }
+            )) {
+                val list = ArrayList<TariffHistory>()
+                while (next()) {
+                    list.add(
+                            TariffHistory(
+                                    getInt("_ID"),
+                                    getInt(TariffsHistoryContract.COLUMN_NAME_USER_ID),
+                                    getInt(TariffsHistoryContract.COLUMN_NAME_END_DATE),
+                                    getString("begin_dates"),
+                                    getString("end_dates")
+                            )
+                    )
+                }
+
+                list
+            }
+        }
+    }
+
+    fun getBeginOfMonth(date: String): String {
+        val simpleDateFormat = SimpleDateFormat("yyyy-MM-dd")
+        val queryDate = simpleDateFormat.parse(date)
+
+        val calendar = Calendar.getInstance().apply {
+            time = queryDate
+            set(Calendar.DAY_OF_MONTH, 1)
+        }
+        return simpleDateFormat.format(calendar.time)
+    }
+
+    // Receives YYYY-mm-DD, calculating US/NASD method
+    fun get360days(begin: String, end: String): Int {
+        val beginSplit = begin.split("-")
+        val endSplit = end.split("-")
+
+        val beginYear = beginSplit[0].toInt()
+        val beginMonth = beginSplit[1].toInt()-1
+        var beginDay = beginSplit[2].toInt()
+
+        val endYear = endSplit[0].toInt()
+        val endMonth = endSplit[1].toInt()-1
+        var endDay = endSplit[2].toInt()
+
+        val calendar = Calendar.getInstance().apply {
+            set(beginYear, beginMonth, beginDay)
+        }
+
+        val daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+
+        if (beginMonth == 1 && endMonth == 1
+                && beginDay == daysInMonth
+                && endDay == daysInMonth) {
+            endDay = 30
+        }
+
+        when(beginDay) {
+            31, daysInMonth -> {
+                beginDay = 30
+                if (endDay == 31)
+                    endDay = 30
+            }
+        }
+
+        return (endYear - beginYear) * 360 + (endMonth - beginMonth) * 30 + (endDay - beginDay)
     }
 
     companion object {

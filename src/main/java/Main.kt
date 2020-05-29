@@ -21,7 +21,7 @@ import java.util.*
 fun main() {
     BasicConfigurator.configure()
     Class.forName("org.sqlite.JDBC")
-//
+
     watcher.Watcher("/home/maxpayne/Share/SberTest").isRunning = true
     DbConnection.getInstance().initDb()
     embeddedServer(Netty, port = 8080) {

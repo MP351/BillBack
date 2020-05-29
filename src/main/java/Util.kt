@@ -24,6 +24,9 @@ data class UsersEntity(val _id: Int, val name: String, val tariff_id: Int, val a
 data class SuspendEntitySber(val users_id: Int, val beginDate: String, val endDate: String = "")
 data class SuspendEntity(val _id: Int, val users_id: Int, val beginDate: String, val endDate: String = "")
 
+data class TariffHistorySber(val tariff_id: Int, val users_id: Int, val begin_date: String, val endDate: String? = null)
+data class TariffHistory(val _id: Int, val tariff_id: Int, val users_id: Int, val begin_date: String, val endDate: String? = null)
+
 data class MonthlySummary(val _id: Int, val monthDate: String, val user_id: Int, val sum: Int) {
     val sumNum = BigDecimal(sum / 100.0)
 }
@@ -35,6 +38,7 @@ data class LoginEntity(val _id: Int, val login: String, val password: String)
 
 // Classes with relations
 data class UserWithTariffEntity(val _id: Int, val name: String, val tariffName: String, val active: Int)
+
 
 
 
