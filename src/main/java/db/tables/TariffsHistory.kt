@@ -34,7 +34,16 @@ class TariffHistory(id: EntityID<Int>): IntEntity(id) {
 
 object TariffsHistoryCRUD: DbQueries<TariffHistoryEntity, TariffHistory> {
     override fun add(entity: TariffHistoryEntity): EntityID<Int> {
-        TODO("Not yet implemented")
+        return transaction {
+            TariffHistory.new {
+                tariff = Tariff.findById(entity.tariffId) ?: throw NoSuchElementException("No such tariff")
+                user = User.findById(entity.userId) ?: throw NoSuchElementException("No such user")
+                beginDate = DateTime(entity.beginDate)
+                endDate = entity.endDate?.let {
+                    DateTime(it)
+                }
+            }.id
+        }
     }
 
     override fun getAll(): List<TariffHistory> {

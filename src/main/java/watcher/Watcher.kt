@@ -16,7 +16,6 @@ class Watcher(path: String) {
     private val dirFile = File(path)
     private val refreshPeriod = TimeUnit.MINUTES.toMillis(1)
     private val paymentProcessor = PaymentProcessor
-    private val invalidPaymentCRUD = InvalidPaymentsCRUD
 
     var isRunning by Delegates.observable(false) {
         _, _, newValue ->

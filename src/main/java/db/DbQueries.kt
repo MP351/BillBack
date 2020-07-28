@@ -3,10 +3,10 @@ package db
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.id.EntityID
 
-interface DbQueries<in H, out T: IntEntity> {
-    fun add(entity: H): EntityID<Int>
+interface DbQueries<in WEB, out T: IntEntity> {
+    fun add(entity: WEB): EntityID<Int>
     fun getAll(): List<T>
     fun getById(id: Int): T
-    fun updateById(id: Int, entity: H)
+    fun updateById(id: Int, entity: WEB)
     fun deleteById(id: Int)
 }

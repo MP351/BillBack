@@ -21,7 +21,7 @@ object PaymentProcessor {
             val id = transaction {
                 paymentCRUD.add(payment)
             }
-            updateMonthlySumForUser(payment.contractNumber, payment.dateTime)
+//            updateMonthlySumForUser(payment.contractNumber, payment.dateTime)
 
             return id
         } catch (e: NoSuchElementException) {
@@ -36,17 +36,17 @@ object PaymentProcessor {
     }
 
     fun getBalanceForUserInMonth(contractNumber: Int, monthDate: DateTime): MonthlySummary {
-        val date = formatDate(monthDate)
+        val date = getFirstDayOfMonth(monthDate)
         TODO()
     }
 
-    // param @monthDate should be a first day of month
-    fun getBalancesInMonth(monthDate: DateTime): List<MonthlySummary> {
+    fun getBalancesInMonth(date: DateTime): List<MonthlySummary> {
+        val beginOfMonth = getFirstDayOfMonth(date)
         TODO()
     }
 
     private fun updateMonthlySumForUser(contractNumber: Int, timestamp: Long) {
-        val date = formatDate(DateTime(timestamp))
+        val date = getFirstDayOfMonth(DateTime(timestamp))
 
         try {
             val cur = monthlySummaryCRUD.getMonthlySumForUserInMonth(contractNumber, date)
@@ -68,10 +68,12 @@ object PaymentProcessor {
     }
 
     private fun calculateMonthlySumForUser(contractNumber: Int, date: DateTime): MonthlySummaryIn {
+        val beginOfMonth = getFirstDayOfMonth(date)
+
         TODO()
     }
 
-    private fun formatDate(date: DateTime): DateTime {
+    private fun getFirstDayOfMonth(date: DateTime): DateTime {
         return DateTime(date.year, date.monthOfYear, 1, 0, 0)
     }
 }
