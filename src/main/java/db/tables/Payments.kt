@@ -22,6 +22,7 @@ object Payments: IntIdTable() {
     val totalAmount: Column<Int> = integer("total_amount")
     val incomeAmount: Column<Int> = integer("income_amount")
     val commissionAmount: Column<Int> = integer("commission_amount")
+    val operation_id: Column<EntityID<Int>> = reference("operation_id", BalanceOperations)
 }
 
 class Payment(id: EntityID<Int>): IntEntity(id){

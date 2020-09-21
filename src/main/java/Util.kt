@@ -14,7 +14,6 @@ data class PaymentEntityDB(val _id: Int, val dateTime: Long, val divisionNumber:
 //data class UsersEntitySber(val name: String, val tariffId: Int, val active: Int)
 //data class UsersEntity(val _id: Int, val name: String, val tariffId: Int, val active: Int)
 
-// TODO: make suspension more informative. Type of suspension
 data class SuspendEntity(val userId: Int, val beginDate: Long, val endDate: Long? = null)
 data class SuspendEntityDB(val _id: Int, val userId: Int, val beginDate: Long, val endDate: Long? = null)
 
@@ -29,13 +28,10 @@ data class TariffEntityDB(val id: Int, val name: String, val price: Int, val spe
 
 data class UserEntity(val contractNumber: Int, val firstName: String, val lastName: String, val fatherName: String, val tariffId: Int, val isActive: Boolean)
 
-data class UserBalanceEntity(val userId: Int, val balance: Int, val lastOperationDate: Long)
+data class UserBalanceEntity(val userId: Int, val balance: Int)
 
 data class TariffChangeRequest(val contractNumber: Int, val tariffId: Int, val beginDate: Long)
 //data class TariffChangeResponse()
-
-data class UserCashFlowEntity(val id:Int, val amount: Int, val isWithdraw: Boolean, val reason: Int)
-data class UserCashFlowReasonEntity(val id: Int, val reason: String)
 
 data class SuspendRequest(val contractNumber: Int, val beginDate: Long)
 
@@ -49,14 +45,20 @@ data class LoginEntityNoPassword(val _id: Int, val login: String)
 data class UserWithTariffEntity(val contractNumber: Int, val firstName: String, val lastName: String, val fatherName: String, val tariffName: String, val isActive: Boolean)
 data class UserWithTariffEntityNew(val contractNumber: Int, val firstName: String, val lastName: String, val fatherName: String, val tariff: TariffEntityDB, val isActive: Boolean)
 
-data class UserCashFlowWithReasonEntity(val id:Int, val amount: Int, val isWithdraw: Boolean, val reason: UserCashFlowReasonEntity)
+
 
 object DateFormatter: SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
 
+data class BalanceOperationTypeEntity(val _id: Int? = null, val name: String)
+data class BalanceOperationEntity(val _id: Int? = null, val userId: Int, val date: Long, val typeId: Int)
 
+data class RecalculationReasonEntity(val _id: Int? = null, val name: String)
+data class RecalculationEntity(val _id: Int? = null, val userId: Int, val amount: Int, val operationId: Int? = null, val reasonId: Int)
 
+data class SuspendReasonEntity(val _id: Int? = null, val name: String)
+data class SuspendEntityNew(val _id: Int? = null, val userId: Int, val beginDate: Long, val endDate: Long?, val reason_id: Int, val operationId: Int?, val comment: String)
 
+data class BalanceHistory(val _id: Int? = null, val userId: Int, val operationId: Int, val amount: Int)
 
-
-
-
+data class WithdrawReason(val _id: Int? = null, val name: String)
+data class Withdrawing(val _id: Int? = null, val userId: Int, val operationId: Int, val amount: Int, val reasonId: Int, val beginDate: Long, val endDate: Int)

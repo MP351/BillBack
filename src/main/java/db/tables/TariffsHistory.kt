@@ -17,7 +17,7 @@ object TariffsHistory: IntIdTable() {
     val tariffId: Column<EntityID<Int>> = reference("tariff_id", Tariffs)
     val userId: Column<EntityID<Int>> = reference("user_id", Users)
     val beginDate: Column<DateTime> = date("begin_date")
-    val endDate: Column<DateTime?> = date("end_date").nullable()
+    val endDate: Column<DateTime> = date("end_date")
 }
 
 class TariffHistory(id: EntityID<Int>): IntEntity(id) {
@@ -39,9 +39,7 @@ object TariffsHistoryCRUD: DbQueries<TariffHistoryEntity, TariffHistory> {
                 tariff = Tariff.findById(entity.tariffId) ?: throw NoSuchElementException("No such tariff")
                 user = User.findById(entity.userId) ?: throw NoSuchElementException("No such user")
                 beginDate = DateTime(entity.beginDate)
-                endDate = entity.endDate?.let {
-                    DateTime(it)
-                }
+                endDate = DateTime(entity.endDate)
             }.id
         }
     }
