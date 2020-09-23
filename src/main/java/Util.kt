@@ -3,10 +3,10 @@ import java.text.SimpleDateFormat
 
 data class PaymentEntity(val dateTime: Long, val divisionNumber: String, val cashierNumber: String,
                          val operationCode: String, val contractNumber: Int, val name: String,
-                         val totalAmount: Int, val incomeAmount: Int, val commissionAmount: Int)
+                         val totalAmount: Int, val incomeAmount: Int, val commissionAmount: Int, val operationId: Int?)
 data class PaymentEntityDB(val _id: Int, val dateTime: Long, val divisionNumber: String, val cashierNumber: String,
                            val operationCode: String, val contractNumber: Int, val name: String,
-                           val totalAmount: Int, val incomeAmount: Int, val commissionAmount: Int)
+                           val totalAmount: Int, val incomeAmount: Int, val commissionAmount: Int, val operationId: Int?)
 
 //data class TariffEntity(val name: String, val price: Int)
 //data class TariffEntityDB(val _id: Int, val name: String, val price: Int)
@@ -17,8 +17,8 @@ data class PaymentEntityDB(val _id: Int, val dateTime: Long, val divisionNumber:
 data class SuspendEntity(val userId: Int, val beginDate: Long, val endDate: Long? = null)
 data class SuspendEntityDB(val _id: Int, val userId: Int, val beginDate: Long, val endDate: Long? = null)
 
-data class TariffHistoryEntity(val tariffId: Int, val userId: Int, val beginDate: Long, val endDate: Long? = null)
-data class TariffHistoryEntityDB(val _id: Int, val tariff: TariffEntityDB, val user: UserEntity, val beginDate: Long, val endDate: Long? = null)
+data class TariffHistoryEntity(val tariffId: Int, val userId: Int, val beginDate: Long, val endDate: Long)
+data class TariffHistoryEntityDB(val _id: Int, val tariff: TariffEntityDB, val user: UserEntity, val beginDate: Long, val endDate: Long)
 
 data class MonthlySummary(val _id: Int, val monthDate: Long, val user_id: Int, val sum: Int)
 data class MonthlySummaryIn(val monthDate: Long, val user_id: Int, val sum: Int)
@@ -53,12 +53,12 @@ data class BalanceOperationTypeEntity(val _id: Int? = null, val name: String)
 data class BalanceOperationEntity(val _id: Int? = null, val userId: Int, val date: Long, val typeId: Int)
 
 data class RecalculationReasonEntity(val _id: Int? = null, val name: String)
-data class RecalculationEntity(val _id: Int? = null, val userId: Int, val amount: Int, val operationId: Int? = null, val reasonId: Int)
+data class RecalculationEntity(val _id: Int? = null, val userId: Int, val amount: Int, val beginDate: Long, val endDate: Long, val operationId: Int? = null, val reasonId: Int)
 
 data class SuspendReasonEntity(val _id: Int? = null, val name: String)
 data class SuspendEntityNew(val _id: Int? = null, val userId: Int, val beginDate: Long, val endDate: Long?, val reason_id: Int, val operationId: Int?, val comment: String)
 
-data class BalanceHistory(val _id: Int? = null, val userId: Int, val operationId: Int, val amount: Int)
+data class BalanceHistoryEntity(val _id: Int? = null, val userId: Int, val operationId: Int, val amount: Int)
 
-data class WithdrawReason(val _id: Int? = null, val name: String)
-data class Withdrawing(val _id: Int? = null, val userId: Int, val operationId: Int, val amount: Int, val reasonId: Int, val beginDate: Long, val endDate: Int)
+data class WithdrawReasonEntity(val _id: Int? = null, val name: String)
+data class WithdrawsEntity(val _id: Int? = null, val userId: Int, val operationId: Int?, val amount: Int, val reasonId: Int, val beginDate: Long, val endDate: Int)

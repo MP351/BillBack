@@ -7,6 +7,7 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.transactions.transaction
 
 object BalanceOperationTypes: IntIdTable() {
     val name: Column<String> = varchar("name", 100)
@@ -17,17 +18,25 @@ class BalanceOperationType(id: EntityID<Int>): IntEntity(id){
     var name by BalanceOperationTypes.name
 }
 
-object BalanceOperationCRUD: DbQueries<BalanceOperationTypeEntity, BalanceOperationType> {
+object BalanceOperationTypeCRUD: DbQueries<BalanceOperationTypeEntity, BalanceOperationType> {
     override fun add(entity: BalanceOperationTypeEntity): EntityID<Int> {
-        TODO("Not yet implemented")
+        return transaction {
+            BalanceOperationType.new {
+                name = entity.name
+            }
+        }.id
     }
 
     override fun getAll(): List<BalanceOperationType> {
-        TODO("Not yet implemented")
+        return transaction {
+            BalanceOperationType.all().toList()
+        }
     }
 
     override fun getById(id: Int): BalanceOperationType {
-        TODO("Not yet implemented")
+        return transaction {
+            BalanceOperationType.findById(id) ?: throw NoSuchElementException("No such type")
+        }
     }
 
     override fun updateById(id: Int, entity: BalanceOperationTypeEntity) {

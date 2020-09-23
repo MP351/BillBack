@@ -22,7 +22,7 @@ object Payments: IntIdTable() {
     val totalAmount: Column<Int> = integer("total_amount")
     val incomeAmount: Column<Int> = integer("income_amount")
     val commissionAmount: Column<Int> = integer("commission_amount")
-    val operation_id: Column<EntityID<Int>> = reference("operation_id", BalanceOperations)
+    val operation_id: Column<EntityID<Int>?> = reference("operation_id", BalanceOperations).nullable()
 }
 
 class Payment(id: EntityID<Int>): IntEntity(id){
@@ -36,6 +36,7 @@ class Payment(id: EntityID<Int>): IntEntity(id){
     var totalAmount by Payments.totalAmount
     var incomeAmount by Payments.incomeAmount
     var commissionAmount by Payments.commissionAmount
+    var operation by BalanceOperation optionalReferencedOn Payments.operation_id
 
     override fun toString(): String {
         return "$operationDateTime $divNumber $cashierNumber $opcode $contractNumber " +
@@ -57,6 +58,7 @@ object PaymentsCRUD: DbQueries<PaymentEntity, Payment> {
                 totalAmount = entity.totalAmount
                 incomeAmount = entity.incomeAmount
                 commissionAmount = entity.commissionAmount
+                operation = BalanceOperation.findById(entity.operationId ?: -1)
             }.id
         }
     }
