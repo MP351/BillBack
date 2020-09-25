@@ -14,14 +14,12 @@ import org.joda.time.DateTime
 object UsersBalances: IntIdTable() {
     val userId: Column<EntityID<Int>> = reference("user_id", Users.id)
     val balance: Column<Int> = integer("balance")
-    val lastOperationDate: Column<DateTime> = date("last_operation_date")
 }
 
 class UserBalance(id: EntityID<Int>): IntEntity(id) {
     companion object: IntEntityClass<UserBalance>(UsersBalances)
     var user by User referencedOn UsersBalances.userId
     var balance by UsersBalances.balance
-    var lastOperationDate by UsersBalances.lastOperationDate
 }
 
 object UsersBalancesCRUD: DbQueries<UserBalanceEntity, UserBalance> {
@@ -30,7 +28,6 @@ object UsersBalancesCRUD: DbQueries<UserBalanceEntity, UserBalance> {
             UserBalance.new {
                 user = User.findById(entity.userId) ?: throw NoSuchElementException("No such user")
                 balance = entity.balance
-                lastOperationDate = DateTime(entity.lastOperationDate)
             }
         }.id
     }
@@ -51,7 +48,6 @@ object UsersBalancesCRUD: DbQueries<UserBalanceEntity, UserBalance> {
         transaction {
             val balance = UserBalance.findById(id) ?: throw NoSuchElementException("No such balance record")
             balance.balance = entity.balance
-            balance.lastOperationDate = DateTime(entity.lastOperationDate)
         }
     }
 

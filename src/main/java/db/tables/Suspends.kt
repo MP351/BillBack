@@ -1,6 +1,7 @@
 package db.tables
 
 import SuspendEntity
+import SuspendEntityNew
 import db.DbQueries
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
@@ -18,6 +19,9 @@ object Suspends: IntIdTable() {
     val userId: Column<EntityID<Int>> = reference("user_id", Users)
     val beginDate: Column<DateTime> = date("begin_date")
     val endDate: Column<DateTime?> = date("end_date").nullable()
+    val reasonId: Column<EntityID<Int>> = reference("reason_id", SuspendReasons)
+    val operationId: Column<EntityID<Int>?> = reference("operation_id", BalanceOperations).nullable()
+    val comment: Column<String> = text("comment")
 }
 
 class Suspend(id: EntityID<Int>): IntEntity(id) {
@@ -25,14 +29,17 @@ class Suspend(id: EntityID<Int>): IntEntity(id) {
     var user by User referencedOn Suspends.userId
     var beginDate by Suspends.beginDate
     var endDate by Suspends.endDate
+    var reason by SuspendReason referencedOn Suspends.reasonId
+    var operation by BalanceOperation optionalReferencedOn Suspends.operationId
+    var comment by Suspends.comment
 
     override fun toString(): String {
         return "${user.lastName} $beginDate $endDate"
     }
 }
 
-object SuspendsCRUD: DbQueries<SuspendEntity, Suspend> {
-    override fun add(entity: SuspendEntity): EntityID<Int> {
+object SuspendsCRUD: DbQueries<SuspendEntityNew, Suspend> {
+    override fun add(entity: SuspendEntityNew): EntityID<Int> {
         return transaction {
             Suspend.new {
                 user = User.findById(entity.userId)
@@ -46,6 +53,9 @@ object SuspendsCRUD: DbQueries<SuspendEntity, Suspend> {
                         DateTime(entity.endDate)
                     }
                 }
+                reason = SuspendReason.findById(entity.reason_id) ?: throw NoSuchElementException("No such reason")
+                operation = BalanceOperation.findById(entity.operationId ?: -1)
+                comment = entity.comment
             }.id
         }
     }
@@ -62,7 +72,7 @@ object SuspendsCRUD: DbQueries<SuspendEntity, Suspend> {
         }
     }
 
-    override fun updateById(id: Int, entity: SuspendEntity) {
+    override fun updateById(id: Int, entity: SuspendEntityNew) {
         TODO("Not yet implemented")
     }
 
