@@ -25,7 +25,6 @@ object DbSettings {
                         InvalidPayments,
                         Suspends,
                         TariffsHistory,
-                        MonthlySummary,
                         ApiUsers
                 )
                 SchemaUtils.createMissingTablesAndColumns(
@@ -35,7 +34,6 @@ object DbSettings {
                         InvalidPayments,
                         Suspends,
                         TariffsHistory,
-                        MonthlySummary,
                         ApiUsers
                 )
             }

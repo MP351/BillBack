@@ -1,6 +1,5 @@
 package db.tables
 
-import SuspendEntity
 import SuspendEntityNew
 import db.DbQueries
 import org.jetbrains.exposed.dao.IntEntity
@@ -20,7 +19,6 @@ object Suspends: IntIdTable() {
     val beginDate: Column<DateTime> = date("begin_date")
     val endDate: Column<DateTime?> = date("end_date").nullable()
     val reasonId: Column<EntityID<Int>> = reference("reason_id", SuspendReasons)
-    val operationId: Column<EntityID<Int>?> = reference("operation_id", BalanceOperations).nullable()
     val comment: Column<String> = text("comment")
 }
 
@@ -30,7 +28,6 @@ class Suspend(id: EntityID<Int>): IntEntity(id) {
     var beginDate by Suspends.beginDate
     var endDate by Suspends.endDate
     var reason by SuspendReason referencedOn Suspends.reasonId
-    var operation by BalanceOperation optionalReferencedOn Suspends.operationId
     var comment by Suspends.comment
 
     override fun toString(): String {
@@ -54,7 +51,6 @@ object SuspendsCRUD: DbQueries<SuspendEntityNew, Suspend> {
                     }
                 }
                 reason = SuspendReason.findById(entity.reason_id) ?: throw NoSuchElementException("No such reason")
-                operation = BalanceOperation.findById(entity.operationId ?: -1)
                 comment = entity.comment
             }.id
         }
@@ -80,7 +76,6 @@ object SuspendsCRUD: DbQueries<SuspendEntityNew, Suspend> {
         TODO("Not yet implemented")
     }
 
-    // begin and end dates should be first days of months yyyy-MM-dd
     fun getSuspendsForUserInPeriod(id: Int, begin: DateTime, end: DateTime): List<Suspend> {
         return transaction {
             Suspend.find {
@@ -104,6 +99,7 @@ object SuspendsCRUD: DbQueries<SuspendEntityNew, Suspend> {
         return transaction {
             val list = Suspend.find{
                 (Suspends.userId eq contractNumber) and
+                        (Suspends.beginDate.lessEq(DateTime())) and
                         (Suspends.endDate.isNull())
             }.toList()
             when(list.size) {
