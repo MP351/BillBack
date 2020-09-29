@@ -107,4 +107,12 @@ object PaymentsCRUD: DbQueries<PaymentEntity, Payment> {
             }.toList()
         }
     }
+
+    fun getUnprocessedPayments(): List<Payment> {
+        return transaction {
+            Payment.find {
+                Payments.operation_id.isNull()
+            }.toList()
+        }
+    }
 }

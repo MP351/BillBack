@@ -41,6 +41,8 @@ object UsersProcessor {
                                 it.lastName,
                                 it.fatherName,
                                 it.tariffId.id.value,
+                                it.tariffActivationDate.millis,
+                                it.isSuspended,
                                 it.isActive
                         )
                     })
@@ -91,6 +93,8 @@ object UsersProcessor {
                             user.lastName,
                             user.fatherName,
                             user.tariffId.id.value,
+                            user.tariffActivationDate.millis,
+                            user.isSuspended,
                             user.isActive))
                 }
             }
@@ -128,10 +132,12 @@ object UsersProcessor {
                                         it.user.lastName,
                                         it.user.fatherName,
                                         it.user.tariffId.id.value,
+                                        it.user.tariffActivationDate.millis,
+                                        it.user.isSuspended,
                                         it.user.isActive
                                 ),
                                 it.beginDate.millis,
-                                it.endDate?.millis
+                                it.endDate.millis
                         )
                     }
                 })

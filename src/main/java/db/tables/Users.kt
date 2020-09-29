@@ -7,13 +7,17 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.jodatime.date
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.joda.time.DateTime
 
 object Users: IntIdTable() {
     val firstName: Column<String> = text("first_name")
     val lastName: Column<String> = text("last_name")
     val fatherName: Column<String> = text("father_name")
     val tariffId: Column<EntityID<Int>> = reference("tariff_id", Tariffs)
+    val tariffActivationDate: Column<DateTime> = date("tariff_activation_date")
+    val isSuspended: Column<Boolean> = bool("is_suspended")
     val isActive: Column<Boolean> = bool("is_active")
 }
 
@@ -23,6 +27,8 @@ class User(id: EntityID<Int>): IntEntity(id) {
     var lastName by Users.lastName
     var fatherName by Users.fatherName
     var tariffId by Tariff referencedOn Users.tariffId
+    var tariffActivationDate by Users.tariffActivationDate
+    var isSuspended by Users.isSuspended
     var isActive by Users.isActive
 
     override fun toString(): String {
@@ -39,6 +45,8 @@ object UsersCRUD: DbQueries<UserEntity, User> {
                 fatherName = entity.fatherName
                 tariffId = Tariff.findById(entity.tariffId)
                         ?: throw NoSuchElementException("No such tariff")
+                tariffActivationDate = DateTime(entity.tariffActivationDate)
+                isSuspended = entity.isSuspended
                 isActive = entity.isActive
             }
         }.id

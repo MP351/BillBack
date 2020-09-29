@@ -1,14 +1,11 @@
 package db.tables
 
-import BalanceOperationEntity
-import db.DbQueries
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.jodatime.date
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 
 object BalanceOperations: IntIdTable() {
@@ -24,34 +21,24 @@ class BalanceOperation(id: EntityID<Int>): IntEntity(id){
     var type by BalanceOperationType referencedOn BalanceOperations.typeId
 }
 
-object BalanceOperationCRUD: DbQueries<BalanceOperationEntity, BalanceOperation> {
-    override fun add(entity: BalanceOperationEntity): EntityID<Int> {
-        return transaction {
-            BalanceOperation.new {
-                user = User.findById(entity.userId) ?: throw NoSuchElementException("No such user")
-                date = DateTime(entity.date)
-                type = BalanceOperationType.findById(entity.typeId) ?: throw NoSuchElementException("No such type")
-            }
-        }.id
+class BalanceOperationCRUD {
+    fun add(userId: Int, typeId: Int): EntityID<Int> {
+        return addAndGet(userId, typeId).id
     }
 
-    override fun getAll(): List<BalanceOperation> {
-        return transaction {
-            BalanceOperation.all().toList()
+    fun addAndGet(userId: Int, typeId: Int): BalanceOperation {
+        return BalanceOperation.new {
+            user = User.findById(userId) ?: throw NoSuchElementException("No such user")
+            date = DateTime(System.currentTimeMillis())
+            type = BalanceOperationType.findById(typeId) ?: throw NoSuchElementException("No such type")
         }
     }
 
-    override fun getById(id: Int): BalanceOperation {
-        return transaction {
-            BalanceOperation.findById(id) ?: throw NoSuchElementException("No such operation")
-        }
+    fun getAll(): List<BalanceOperation> {
+        return BalanceOperation.all().toList()
     }
 
-    override fun updateById(id: Int, entity: BalanceOperationEntity) {
-        TODO("Not yet implemented")
-    }
-
-    override fun deleteById(id: Int) {
-        TODO("Not yet implemented")
+    fun getById(id: Int): BalanceOperation {
+        return BalanceOperation.findById(id) ?: throw NoSuchElementException("No such operation")
     }
 }
