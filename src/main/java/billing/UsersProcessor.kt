@@ -8,15 +8,24 @@ import TariffHistoryEntityDB
 import UserEntity
 import UserWithTariffEntityNew
 import api.util.Response
+import billing.balance.BalanceProcessor
 import db.tables.*
 import io.ktor.http.HttpStatusCode
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.lang.IllegalArgumentException
 
 object UsersProcessor {
     private val usersCRUD = UsersCRUD
     private val tariffHistoryCRUD = TariffsHistoryCRUD
     private val suspendsCRUD = SuspendsCRUD
+    private val balanceProcessor = BalanceProcessor
+
+    fun newUser(firstName: String, lastName: String, fatherName: String,
+                tariffId: Int, isSuspended: Boolean = true, isActive: Boolean = true): User {
+        val user = usersCRUD.addAndGet(firstName, lastName, fatherName, tariffId, isSuspended, isActive)
+        balanceProcessor.initBalance(user)
+
+        return user
+    }
 
     fun addUser(userEntity: UserEntity): Response<Int> {
         return try {
@@ -40,7 +49,7 @@ object UsersProcessor {
                                 it.firstName,
                                 it.lastName,
                                 it.fatherName,
-                                it.tariffId.id.value,
+                                it.tariff.id.value,
                                 it.tariffActivationDate.millis,
                                 it.isSuspended,
                                 it.isActive
@@ -66,10 +75,10 @@ object UsersProcessor {
                                 it.lastName,
                                 it.fatherName,
                                 TariffEntityDB(
-                                        it.tariffId.id.value,
-                                        it.tariffId.name,
-                                        it.tariffId.price,
-                                        it.tariffId.speedLimit
+                                        it.tariff.id.value,
+                                        it.tariff.name,
+                                        it.tariff.price,
+                                        it.tariff.speedLimit
                                 ),
                                 it.isActive
                         )
@@ -92,7 +101,7 @@ object UsersProcessor {
                             user.firstName,
                             user.lastName,
                             user.fatherName,
-                            user.tariffId.id.value,
+                            user.tariff.id.value,
                             user.tariffActivationDate.millis,
                             user.isSuspended,
                             user.isActive))
@@ -131,7 +140,7 @@ object UsersProcessor {
                                         it.user.firstName,
                                         it.user.lastName,
                                         it.user.fatherName,
-                                        it.user.tariffId.id.value,
+                                        it.user.tariff.id.value,
                                         it.user.tariffActivationDate.millis,
                                         it.user.isSuspended,
                                         it.user.isActive

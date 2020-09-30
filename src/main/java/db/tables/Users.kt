@@ -19,6 +19,7 @@ object Users: IntIdTable() {
     val tariffActivationDate: Column<DateTime> = date("tariff_activation_date")
     val isSuspended: Column<Boolean> = bool("is_suspended")
     val isActive: Column<Boolean> = bool("is_active")
+    val lastWatchedTime: Column<DateTime> = date("last_watched_time")
 }
 
 class User(id: EntityID<Int>): IntEntity(id) {
@@ -26,50 +27,61 @@ class User(id: EntityID<Int>): IntEntity(id) {
     var firstName by Users.firstName
     var lastName by Users.lastName
     var fatherName by Users.fatherName
-    var tariffId by Tariff referencedOn Users.tariffId
+    var tariff by Tariff referencedOn Users.tariffId
     var tariffActivationDate by Users.tariffActivationDate
     var isSuspended by Users.isSuspended
     var isActive by Users.isActive
+    var lastWatchedTime by Users.lastWatchedTime
 
     override fun toString(): String {
-        return "$id $firstName $lastName ${tariffId.name} $isActive"
+        return "$id $firstName $lastName ${tariff.name} $isActive"
     }
 }
 
-object UsersCRUD: DbQueries<UserEntity, User> {
-    override fun add(entity: UserEntity): EntityID<Int> {
+object UsersCRUD {
+    fun add(entity: UserEntity): EntityID<Int> {
         return transaction {
             User.new(entity.contractNumber) {
                 firstName = entity.firstName
                 lastName = entity.lastName
                 fatherName = entity.fatherName
-                tariffId = Tariff.findById(entity.tariffId)
+                tariff = Tariff.findById(entity.tariffId)
                         ?: throw NoSuchElementException("No such tariff")
                 tariffActivationDate = DateTime(entity.tariffActivationDate)
                 isSuspended = entity.isSuspended
                 isActive = entity.isActive
+                lastWatchedTime = DateTime()
             }
         }.id
     }
 
-    override fun getAll(): List<User> {
+    fun addAndGet(firstName: String, lastName: String, fatherName: String,
+                  tariffId: Int, isSuspended: Boolean = true, isActive: Boolean = true): User {
+        return transaction {
+            User.new {
+                this.firstName = firstName
+                this.lastName = lastName
+                this.fatherName = fatherName
+                this.tariff = Tariff.findById(tariffId)
+                        ?: throw NoSuchElementException("No such tariff")
+                this.tariffActivationDate = DateTime()
+                this.isSuspended = isSuspended
+                this.isActive = isActive
+                this.lastWatchedTime = DateTime()
+            }
+        }
+    }
+
+    fun getAll(): List<User> {
         return transaction {
             User.all().toList()
         }
     }
 
-    override fun getById(id: Int): User {
+    fun getById(id: Int): User {
         return transaction {
             User.findById(id)
                     ?: throw NoSuchElementException("No such user")
         }
-    }
-
-    override fun updateById(id: Int, entity: UserEntity) {
-        TODO("Not yet implemented")
-    }
-
-    override fun deleteById(id: Int) {
-        TODO("Not yet implemented")
     }
 }

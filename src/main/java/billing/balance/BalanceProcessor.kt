@@ -4,6 +4,7 @@ import db.tables.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import java.util.*
+import kotlin.NoSuchElementException
 
 object BalanceProcessor {
     private val userBalanceCRUD = UsersBalancesCRUD
@@ -12,12 +13,22 @@ object BalanceProcessor {
     private val withdrawCRUD = WithdrawsCRUD
     private val suspendCRUD = SuspendsCRUD
 
-    fun initBalance(id: Int) {
+    fun initBalance(user: User) {
         transaction {
-            UserBalance.new(id) {
+            UserBalance.new(user.id.value) {
                 balance = 0
 
-                // TODO: init withdraws
+                val currentDate = DateTime()
+                val nextMonthDate = DateTime(currentDate.year, currentDate.monthOfYear+1, 1, 0, 0)
+                Withdraw.new {
+                    this.user = user
+                    this.amount = user.tariff.price
+                    this.reason = WithdrawReason.findById(1) ?: throw NoSuchElementException("No such reason")
+                    this.beginDate = currentDate
+                    this.endDate = nextMonthDate
+                    this.scheduledDate = nextMonthDate
+
+                }
             }
         }
     }
@@ -54,15 +65,12 @@ object BalanceProcessor {
                         sum
                 )
 
-                Withdraw.new {
-                    user = it.user
-                    amount = it.amount
-                    reason = it.reason
-                    beginDate = it.endDate
-                    val nextMonth = it.endDate.plusMonths(1)
-                    endDate = nextMonth
-                    scheduledDate = nextMonth
+                if (isSuspendActive(it.user, it.endDate)) {
+                    it.user.isSuspended = true
+                } else {
+                    scheduleNextMonthWithdrawing(it.user, it.endDate, it.endDate.plusMonths(1))
                 }
+
                 it.amount = sum
             }
         }
@@ -101,6 +109,22 @@ object BalanceProcessor {
         return count
     }
 
+    private fun isSuspendActive(user: User, end: DateTime): Boolean {
+
+        return false
+    }
+
+    private fun scheduleNextMonthWithdrawing(user: User, begin: DateTime, end: DateTime) {
+        Withdraw.new {
+            this.user = user
+            this.amount = user.tariff.price
+            this.reason = WithdrawReason.findById(1) ?: throw NoSuchElementException("No such reason")
+            this.beginDate = begin
+            this.endDate = end
+            this.scheduledDate = end
+        }
+    }
+
     // Calculating US/NASD method
     private fun get360days(begin: DateTime, end: DateTime): Int {
         val beginYear = begin.year().get()
@@ -132,11 +156,5 @@ object BalanceProcessor {
         }
 
         return (endYear - beginYear) * 360 + (endMonth - beginMonth) * 30 + (endDay - beginDay)
-    }
-
-    private fun scheduleNextMonthWithdrawing(userId: Int) {
-        Withdraw.new {
-
-        }
     }
 }
