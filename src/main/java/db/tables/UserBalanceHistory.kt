@@ -18,17 +18,14 @@ class UserBalanceHistory(id: EntityID<Int>): IntEntity(id) {
 }
 
 class UserBalancesHistoryCRUD {
-    fun add(opcode: Int, userId: Int, balance: Int): EntityID<Int> {
-        return UserBalanceHistory.new(opcode) {
-            user = User.findById(userId) ?: throw NoSuchElementException("No such user")
-            amount = balance
-        }.id
+    fun add(opcode: Int, user: User, balance: Int): EntityID<Int> {
+        return addAndGet(opcode, user, balance).id
     }
 
-    fun addAndGet(opcode: Int, userId: Int, balance: Int): UserBalanceHistory {
+    fun addAndGet(opcode: Int, user: User, balance: Int): UserBalanceHistory {
         return UserBalanceHistory.new(opcode) {
-            user = User.findById(userId) ?: throw NoSuchElementException("No such user")
-            amount = balance
+            this.user = user
+            this.amount = balance
         }
     }
 }

@@ -1,6 +1,8 @@
 package billing.balance
 
 import db.tables.*
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import java.util.*
@@ -13,42 +15,41 @@ object BalanceProcessor {
     private val withdrawCRUD = WithdrawsCRUD
     private val suspendCRUD = SuspendsCRUD
 
-    fun initBalance(user: User) {
+    fun initBalance(user: User, amount: Int? = null) {
         transaction {
             UserBalance.new(user.id.value) {
-                balance = 0
+                balance = amount ?: 0
 
                 val currentDate = DateTime()
                 val nextMonthDate = DateTime(currentDate.year, currentDate.monthOfYear+1, 1, 0, 0)
-                Withdraw.new {
-                    this.user = user
-                    this.amount = user.tariff.price
-                    this.reason = WithdrawReason.findById(1) ?: throw NoSuchElementException("No such reason")
-                    this.beginDate = currentDate
-                    this.endDate = nextMonthDate
-                    this.scheduledDate = nextMonthDate
-
-                }
+                scheduleNextMonthWithdrawing(user = user, end = nextMonthDate)
             }
         }
     }
 
-    fun proceedNewPayments(payments: List<Payment>) {
+    fun processedNewPayments(payments: List<Payment>) {
         payments.forEach {
-            it.operation = addPaymentOntoBalance(
-                    it.contractNumber.id.value,
+            it.operation = makePaymentAndGetOperation(
+                    it.contractNumber,
                     it.totalAmount
             )
         }
     }
 
-    private fun addPaymentOntoBalance(userId: Int, amount: Int): BalanceOperation {
+    private fun makePaymentAndGetOperation(user: User, amount: Int, isWithdrawing: Boolean = false): BalanceOperation {
         return transaction {
-            val currentBalance = userBalanceCRUD.getByUserId(userId)
-            currentBalance.balance += amount
+            val userId = user.id.value
+            val currentBalance = UserBalance[user.id]
 
-            val operation = balanceOperationsCRUD.addAndGet(userId, 1)
-            userBalanceHistoryCRUD.add(operation.id.value, userId, currentBalance.balance)
+            val operation = if (isWithdrawing) {
+                currentBalance.balance -= amount
+                balanceOperationsCRUD.addAndGet(userId, 1)
+            } else {
+                currentBalance.balance += amount
+                balanceOperationsCRUD.addAndGet(userId, 2)
+            }
+
+            userBalanceHistoryCRUD.add(operation.id.value, user, currentBalance.balance)
 
             operation
         }
@@ -60,9 +61,10 @@ object BalanceProcessor {
 
             withdraws.forEach {
                 val sum = it.amount - it.amount / 30 * getSuspendDaysCount(it.user.id.value, it.beginDate, it.endDate)
-                it.operation = withdrawPaymentFromBalance(
-                        it.user.id.value,
-                        sum
+                it.operation = makePaymentAndGetOperation(
+                        it.user,
+                        sum,
+                        true
                 )
 
                 if (isSuspendActive(it.user, it.endDate)) {
@@ -73,18 +75,6 @@ object BalanceProcessor {
 
                 it.amount = sum
             }
-        }
-    }
-
-    private fun withdrawPaymentFromBalance(userId: Int, amount: Int): BalanceOperation {
-        return transaction {
-            val currentBalance = userBalanceCRUD.getByUserId(userId)
-            currentBalance.balance -= amount
-
-            val operation = balanceOperationsCRUD.addAndGet(userId, 1)
-            userBalanceHistoryCRUD.add(operation.id.value, userId, currentBalance.balance)
-
-            operation
         }
     }
 
@@ -110,16 +100,20 @@ object BalanceProcessor {
     }
 
     private fun isSuspendActive(user: User, end: DateTime): Boolean {
-
-        return false
+        val suspend = Suspend.find {
+            (Suspends.userId eq user.id) and
+                    (Suspends.beginDate lessEq end) and
+                    (Suspends.endDate.isNull() or (Suspends.endDate greater end))
+        }
+        return !suspend.empty()
     }
 
-    private fun scheduleNextMonthWithdrawing(user: User, begin: DateTime, end: DateTime) {
-        Withdraw.new {
+    private fun scheduleNextMonthWithdrawing(user: User, begin: DateTime? = null, end: DateTime): Withdraw {
+        return Withdraw.new {
             this.user = user
             this.amount = user.tariff.price
             this.reason = WithdrawReason.findById(1) ?: throw NoSuchElementException("No such reason")
-            this.beginDate = begin
+            this.beginDate = begin ?: DateTime()
             this.endDate = end
             this.scheduledDate = end
         }

@@ -1,7 +1,5 @@
 package db.tables
 
-import UserEntity
-import db.DbQueries
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -19,7 +17,7 @@ object Users: IntIdTable() {
     val tariffActivationDate: Column<DateTime> = date("tariff_activation_date")
     val isSuspended: Column<Boolean> = bool("is_suspended")
     val isActive: Column<Boolean> = bool("is_active")
-    val lastWatchedTime: Column<DateTime> = date("last_watched_time")
+    val lastProcessedTime: Column<DateTime> = date("last_processed_time")
 }
 
 class User(id: EntityID<Int>): IntEntity(id) {
@@ -31,7 +29,7 @@ class User(id: EntityID<Int>): IntEntity(id) {
     var tariffActivationDate by Users.tariffActivationDate
     var isSuspended by Users.isSuspended
     var isActive by Users.isActive
-    var lastWatchedTime by Users.lastWatchedTime
+    var lastProcessedTime by Users.lastProcessedTime
 
     override fun toString(): String {
         return "$id $firstName $lastName ${tariff.name} $isActive"
@@ -39,26 +37,24 @@ class User(id: EntityID<Int>): IntEntity(id) {
 }
 
 object UsersCRUD {
-    fun add(entity: UserEntity): EntityID<Int> {
-        return transaction {
-            User.new(entity.contractNumber) {
-                firstName = entity.firstName
-                lastName = entity.lastName
-                fatherName = entity.fatherName
-                tariff = Tariff.findById(entity.tariffId)
-                        ?: throw NoSuchElementException("No such tariff")
-                tariffActivationDate = DateTime(entity.tariffActivationDate)
-                isSuspended = entity.isSuspended
-                isActive = entity.isActive
-                lastWatchedTime = DateTime()
-            }
-        }.id
+    fun add(id: Int?, firstName: String, lastName: String, fatherName: String,
+            tariffId: Int, isSuspended: Boolean = true, isActive: Boolean = true, lastProcessedTime: DateTime): EntityID<Int> {
+        return addAndGet(
+                id,
+                firstName,
+                lastName,
+                fatherName,
+                tariffId,
+                isSuspended,
+                isActive,
+                lastProcessedTime
+        ).id
     }
 
-    fun addAndGet(firstName: String, lastName: String, fatherName: String,
-                  tariffId: Int, isSuspended: Boolean = true, isActive: Boolean = true): User {
+    fun addAndGet(id: Int?, firstName: String, lastName: String, fatherName: String,
+                  tariffId: Int, isSuspended: Boolean = true, isActive: Boolean = true, lastProcessedTime: DateTime): User {
         return transaction {
-            User.new {
+            User.new(id) {
                 this.firstName = firstName
                 this.lastName = lastName
                 this.fatherName = fatherName
@@ -67,7 +63,7 @@ object UsersCRUD {
                 this.tariffActivationDate = DateTime()
                 this.isSuspended = isSuspended
                 this.isActive = isActive
-                this.lastWatchedTime = DateTime()
+                this.lastProcessedTime = lastProcessedTime
             }
         }
     }
@@ -83,5 +79,11 @@ object UsersCRUD {
             User.findById(id)
                     ?: throw NoSuchElementException("No such user")
         }
+    }
+
+    fun getActiveUsers(): List<User> {
+        return User.find {
+            Users.isActive eq true
+        }.toList()
     }
 }

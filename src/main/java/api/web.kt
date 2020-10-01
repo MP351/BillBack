@@ -133,14 +133,14 @@ fun Application.webModule() {
                 }
 
                 post("users") {
-                    when (val response = UsersProcessor.addUser(call.receive())) {
-                        is Response.Success<*> -> {
-                            call.respond(response.code, response.data)
-                        }
-                        is Response.Failure -> {
-                            call.respond(response.code)
-                        }
-                    }
+//                    when (val response = UsersProcessor.addUser(call.receive())) {
+//                        is Response.Success<*> -> {
+//                            call.respond(response.code, response.data)
+//                        }
+//                        is Response.Failure -> {
+//                            call.respond(response.code)
+//                        }
+//                    }
                 }
 
 //                get("payments") {

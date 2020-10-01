@@ -12,6 +12,7 @@ import billing.balance.BalanceProcessor
 import db.tables.*
 import io.ktor.http.HttpStatusCode
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.joda.time.DateTime
 
 object UsersProcessor {
     private val usersCRUD = UsersCRUD
@@ -19,24 +20,24 @@ object UsersProcessor {
     private val suspendsCRUD = SuspendsCRUD
     private val balanceProcessor = BalanceProcessor
 
-    fun newUser(firstName: String, lastName: String, fatherName: String,
-                tariffId: Int, isSuspended: Boolean = true, isActive: Boolean = true): User {
-        val user = usersCRUD.addAndGet(firstName, lastName, fatherName, tariffId, isSuspended, isActive)
-        balanceProcessor.initBalance(user)
+    fun newUser(id: Int?, firstName: String, lastName: String, fatherName: String,
+                tariffId: Int, isSuspended: Boolean = true, isActive: Boolean = true, balance: Int? = null): User {
+        val user = usersCRUD.addAndGet(id, firstName, lastName, fatherName, tariffId, isSuspended, isActive, DateTime())
+        balanceProcessor.initBalance(user, balance)
 
         return user
     }
 
-    fun addUser(userEntity: UserEntity): Response<Int> {
-        return try {
-            val hm = HashMap<String, Int>().apply {
-                put("userId", usersCRUD.add(userEntity).value)
-            }
-            Response.Success(HttpStatusCode.OK, hm)
-        } catch (t: Throwable) {
-            Response.Failure(HttpStatusCode.BadRequest, t.message.toString())
-        }
-    }
+//    fun addUser(userEntity: UserEntity): Response<Int> {
+//        return try {
+//            val hm = HashMap<String, Int>().apply {
+//                put("userId", usersCRUD.add(userEntity).value)
+//            }
+//            Response.Success(HttpStatusCode.OK, hm)
+//        } catch (t: Throwable) {
+//            Response.Failure(HttpStatusCode.BadRequest, t.message.toString())
+//        }
+//    }
 
     fun getUsers(): Response<List<UserEntity>> {
         return try {
@@ -192,5 +193,9 @@ object UsersProcessor {
         } catch (t: Throwable) {
             Response.Failure(HttpStatusCode.BadRequest, t.message.toString())
         }
+    }
+
+    fun getActiveUsers(): List<User> {
+        return usersCRUD.getActiveUsers()
     }
 }

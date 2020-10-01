@@ -1,5 +1,6 @@
 package billing.balance
 
+import billing.UsersProcessor
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -22,16 +23,17 @@ class PaymentsWatcher {
 
     private suspend fun watch() {
         val unprocessedPayments = paymentsProcessor.getUnprocessedPayments()
-        balanceProcessor.proceedNewPayments(unprocessedPayments)
+        balanceProcessor.processedNewPayments(unprocessedPayments)
 
         delay(refreshPeriod)
     }
 }
 
-class TariffWithdrawWatcher {
+class ProcessingWatcher {
     private val refreshPeriod = TimeUnit.MINUTES.toMillis(10)
     private val balanceProcessor = BalanceProcessor
     private val withdrawProcessor = WithdrawProcessor
+    private val usersProcessor = UsersProcessor
 
     var isRunning = Delegates.observable(false) {
         _, _, newValue ->
@@ -43,7 +45,8 @@ class TariffWithdrawWatcher {
     }
 
     private suspend fun watch() {
-        balanceProcessor.withdrawMonthlyPaymentFromBalances()
+        // TODO()
+        val activeUsers = usersProcessor.getActiveUsers()
 
         delay(refreshPeriod)
     }
