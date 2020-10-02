@@ -151,4 +151,8 @@ object BalanceProcessor {
 
         return (endYear - beginYear) * 360 + (endMonth - beginMonth) * 30 + (endDay - beginDay)
     }
+
+    fun proceedScheduledWithdraws(user: User) {
+
+    }
 }

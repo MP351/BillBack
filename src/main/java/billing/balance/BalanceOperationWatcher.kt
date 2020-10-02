@@ -47,6 +47,9 @@ class ProcessingWatcher {
     private suspend fun watch() {
         // TODO()
         val activeUsers = usersProcessor.getActiveUsers()
+        activeUsers.forEach {
+            balanceProcessor.proceedScheduledWithdraws(it)
+        }
 
         delay(refreshPeriod)
     }
