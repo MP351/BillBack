@@ -1,7 +1,6 @@
 package db.tables
 
 import SuspendEntityNew
-import db.DbQueries
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -20,6 +19,7 @@ object Suspends: IntIdTable() {
     val endDate: Column<DateTime?> = date("end_date").nullable()
     val reasonId: Column<EntityID<Int>> = reference("reason_id", SuspendReasons)
     val comment: Column<String> = text("comment")
+    val isCompleted: Column<Boolean> = bool("is_completed").default(false)
 }
 
 class Suspend(id: EntityID<Int>): IntEntity(id) {
@@ -29,14 +29,15 @@ class Suspend(id: EntityID<Int>): IntEntity(id) {
     var endDate by Suspends.endDate
     var reason by SuspendReason referencedOn Suspends.reasonId
     var comment by Suspends.comment
+    val isCompleted by Suspends.isCompleted
 
     override fun toString(): String {
         return "${user.lastName} $beginDate $endDate"
     }
 }
 
-object SuspendsCRUD: DbQueries<SuspendEntityNew, Suspend> {
-    override fun add(entity: SuspendEntityNew): EntityID<Int> {
+object SuspendsCRUD {
+    fun add(entity: SuspendEntityNew): EntityID<Int> {
         return transaction {
             Suspend.new {
                 user = User.findById(entity.userId)
@@ -56,24 +57,16 @@ object SuspendsCRUD: DbQueries<SuspendEntityNew, Suspend> {
         }
     }
 
-    override fun getAll(): List<Suspend> {
+    fun getAll(): List<Suspend> {
         return transaction {
             Suspend.all().toList()
         }
     }
 
-    override fun getById(id: Int): Suspend {
+    fun getById(id: Int): Suspend {
         return transaction {
             Suspend.findById(id) ?: throw NoSuchElementException("No such suspend")
         }
-    }
-
-    override fun updateById(id: Int, entity: SuspendEntityNew) {
-        TODO("Not yet implemented")
-    }
-
-    override fun deleteById(id: Int) {
-        TODO("Not yet implemented")
     }
 
     fun getSuspendsForUserInPeriod(id: Int, begin: DateTime, end: DateTime): List<Suspend> {
@@ -114,5 +107,11 @@ object SuspendsCRUD: DbQueries<SuspendEntityNew, Suspend> {
                 }
             }
         }
+    }
+
+    fun getEndingSuspendForUser(user: User, dateTime: DateTime): Suspend? {
+        return Suspend.find {
+            (Suspends.userId eq user.id) and (Suspends.endDate eq dateTime)
+        }.toList().first()
     }
 }

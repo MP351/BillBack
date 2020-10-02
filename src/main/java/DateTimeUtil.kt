@@ -1,6 +1,11 @@
 import org.joda.time.DateTime
+import org.joda.time.MutableDateTime
 import java.util.*
 
+fun MutableDateTime.isToday(): Boolean {
+    val today = DateTime()
+    return year == today.year && monthOfYear == today.monthOfYear && dayOfMonth == today.dayOfMonth
+}
 
 fun DateTime.isToday(): Boolean {
     val today = DateTime()
