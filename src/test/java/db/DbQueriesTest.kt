@@ -1,6 +1,5 @@
 package db
 
-import api.db.DbQuery
 import org.junit.Test
 
 internal class DbQueriesTest {

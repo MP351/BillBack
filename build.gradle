@@ -16,6 +16,7 @@ repositories {
 }
 
 dependencies {
+    implementation 'org.junit.jupiter:junit-jupiter:5.4.2'
     testCompile group: 'junit', name: 'junit', version: '4.12'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation group: "org.xerial", name: "sqlite-jdbc", version: "3.7.2"
@@ -43,4 +44,8 @@ compileTestKotlin {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+}
+
+test {
+    useJUnitPlatform()
 }

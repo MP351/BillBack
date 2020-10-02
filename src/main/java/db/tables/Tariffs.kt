@@ -65,7 +65,7 @@ object TariffCRUD: DbQueries<TariffEntity, Tariff> {
 
     fun getTariffForUser(contractNumber: Int): Tariff {
         return transaction {
-            User.findById(contractNumber)?.tariffId ?: throw NoSuchElementException("No user or tariff with such id")
+            User.findById(contractNumber)?.tariff ?: throw NoSuchElementException("No user or tariff with such id")
         }
     }
 }

@@ -1,13 +1,10 @@
 import org.joda.time.DateTime
 import java.util.*
 
-fun DateTime.isToday(date: DateTime): Boolean {
-    val today = DateTime()
-    return date.year == today.year && date.monthOfYear == today.monthOfYear && date.dayOfMonth == today.dayOfMonth
-}
 
 fun DateTime.isToday(): Boolean {
-    return isToday(this)
+    val today = DateTime()
+    return year == today.year && monthOfYear == today.monthOfYear && dayOfMonth == today.dayOfMonth
 }
 
 fun DateTime.getFirstDayOfNextMonth(date: DateTime): DateTime {
@@ -15,11 +12,19 @@ fun DateTime.getFirstDayOfNextMonth(date: DateTime): DateTime {
 }
 
 fun DateTime.getFirstDayOfNextMonth(): DateTime {
-    return getFirstDayOfNextMonth(DateTime())
+    return getFirstDayOfNextMonth(this)
+}
+
+fun DateTime.getFirstDayOfMonth(date: DateTime): DateTime {
+    return DateTime(date.year, date.monthOfYear, 1, 0, 0)
+}
+
+fun DateTime.getFirstDayOfMonth(): DateTime {
+    return getFirstDayOfMonth(this)
 }
 
 // Calculating US/NASD method
-fun DateTime.days360(begin: DateTime, end: DateTime): Int {
+private fun getDays360(begin: DateTime, end: DateTime): Int {
     val beginYear = begin.year().get()
     val beginMonth = begin.monthOfYear().get()
     var beginDay = begin.dayOfMonth().get()
@@ -53,7 +58,7 @@ fun DateTime.days360(begin: DateTime, end: DateTime): Int {
 
 fun DateTime.days360(date: DateTime): Int {
     return if (this.isBefore(date))
-        days360(this, date)
+        getDays360(this, date)
     else
-        days360(date, this)
+        getDays360(date, this)
 }
