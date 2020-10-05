@@ -1,5 +1,6 @@
 package billing.balance
 
+import billing.SuspendsProcessor
 import billing.UsersProcessor
 import days360
 import db.tables.SuspendsCRUD
@@ -45,6 +46,7 @@ class ProcessingWatcher {
     private val balanceProcessor = BalanceProcessor
     private val withdrawProcessor = WithdrawProcessor
     private val usersProcessor = UsersProcessor
+    private val suspendsProcessor = SuspendsProcessor
 
     var isRunning = Delegates.observable(false) {
         _, _, newValue ->
@@ -56,11 +58,9 @@ class ProcessingWatcher {
     }
 
     private suspend fun watch() {
-        // TODO()
-        val activeUsers = usersProcessor.getActiveUsers()
-        activeUsers.forEach {
-            balanceProcessor.proceedScheduledWithdraws(it)
-        }
+        suspendsProcessor.proceedScheduledSuspends()
+        suspendsProcessor.proceedScheduledResumes()
+        balanceProcessor.proceedScheduledWithdraws()
 
         delay(refreshPeriod)
     }

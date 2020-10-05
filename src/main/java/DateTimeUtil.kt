@@ -12,6 +12,10 @@ fun DateTime.isToday(): Boolean {
     return year == today.year && monthOfYear == today.monthOfYear && dayOfMonth == today.dayOfMonth
 }
 
+fun DateTime.getToday(): DateTime {
+    return DateTime(this.year, this.monthOfYear, 1, 0, 0)
+}
+
 fun DateTime.getFirstDayOfNextMonth(date: DateTime): DateTime {
     return DateTime(date.year, date.monthOfYear, 1, 0, 0).plusMonths(1)
 }

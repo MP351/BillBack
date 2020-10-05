@@ -20,21 +20,31 @@ object DbSettings {
             transaction {
                 SchemaUtils.create(
                         Tariffs,
+                        TariffsHistory,
                         Users,
                         Payments,
                         InvalidPayments,
                         Suspends,
-                        TariffsHistory,
-                        ApiUsers
+                        SuspendReasons,
+                        ApiUsers,
+                        BalanceOperationTypes,
+                        BalanceOperations,
+                        UserBalancesHistory,
+                        UsersBalances
                 )
                 SchemaUtils.createMissingTablesAndColumns(
                         Tariffs,
+                        TariffsHistory,
                         Users,
                         Payments,
                         InvalidPayments,
                         Suspends,
-                        TariffsHistory,
-                        ApiUsers
+                        SuspendReasons,
+                        ApiUsers,
+                        BalanceOperationTypes,
+                        BalanceOperations,
+                        UserBalancesHistory,
+                        UsersBalances
                 )
             }
         }

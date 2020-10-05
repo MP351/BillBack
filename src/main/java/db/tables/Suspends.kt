@@ -5,10 +5,8 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.jodatime.date
-import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import java.lang.IllegalArgumentException
@@ -17,8 +15,8 @@ object Suspends: IntIdTable() {
     val userId: Column<EntityID<Int>> = reference("user_id", Users)
     val beginDate: Column<DateTime> = date("begin_date")
     val endDate: Column<DateTime?> = date("end_date").nullable()
-    val reasonId: Column<EntityID<Int>> = reference("reason_id", SuspendReasons)
-    val comment: Column<String> = text("comment")
+    val reasonId: Column<EntityID<Int>> = reference("reason_id", SuspendReasons).default(SuspendReason.findById(1)!!.id)
+    val notes: Column<String> = text("notes").default("")
     val isCompleted: Column<Boolean> = bool("is_completed").default(false)
 }
 
@@ -28,8 +26,8 @@ class Suspend(id: EntityID<Int>): IntEntity(id) {
     var beginDate by Suspends.beginDate
     var endDate by Suspends.endDate
     var reason by SuspendReason referencedOn Suspends.reasonId
-    var comment by Suspends.comment
-    val isCompleted by Suspends.isCompleted
+    var notes by Suspends.notes
+    var isCompleted by Suspends.isCompleted
 
     override fun toString(): String {
         return "${user.lastName} $beginDate $endDate"
@@ -52,7 +50,7 @@ object SuspendsCRUD {
                     }
                 }
                 reason = SuspendReason.findById(entity.reason_id) ?: throw NoSuchElementException("No such reason")
-                comment = entity.comment
+                notes = entity.comment
             }.id
         }
     }
@@ -113,5 +111,31 @@ object SuspendsCRUD {
         return Suspend.find {
             (Suspends.userId eq user.id) and (Suspends.endDate eq dateTime)
         }.toList().first()
+    }
+
+    fun getSuspendsForActiveUnsuspendedUsers(date: DateTime): List<Suspend> {
+        return Suspend.wrapRows(
+                Suspends.innerJoin(Users)
+                    .slice(Suspends.columns)
+                    .select {
+                        Users.isActive eq true and
+                                (Users.isSuspended eq false) and
+                                (Suspends.beginDate eq date)
+                    }.withDistinct()).toList()
+    }
+
+    fun getLastSuspendEnding(user: User, date: DateTime): DateTime? {
+        return Suspend.find {
+            Suspends.userId eq user.id  and
+                    (Suspends.endDate lessEq date)
+        }.maxBy {
+            Suspends.endDate
+        }?.endDate
+    }
+
+    fun getSuspendsScheduledForResume(date: DateTime): List<Suspend> {
+        return Suspend.find {
+            Suspends.endDate eq date
+        }.toList()
     }
 }

@@ -5,7 +5,9 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.jodatime.date
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 
@@ -14,10 +16,10 @@ object Users: IntIdTable() {
     val lastName: Column<String> = text("last_name")
     val fatherName: Column<String> = text("father_name")
     val tariffId: Column<EntityID<Int>> = reference("tariff_id", Tariffs)
-    val tariffActivationDate: Column<DateTime> = date("tariff_activation_date")
-    val isSuspended: Column<Boolean> = bool("is_suspended")
-    val isActive: Column<Boolean> = bool("is_active")
-    val lastProcessedTime: Column<DateTime> = date("last_processed_time")
+    val tariffActivationDate: Column<DateTime> = date("tariff_activation_date").default(DateTime(2020, 1, 1, 0, 0))
+    val isSuspended: Column<Boolean> = bool("is_suspended").default(false)
+    val isActive: Column<Boolean> = bool("is_active").default(true)
+    val lastProcessedTime: Column<DateTime> = date("last_processed_time").default(DateTime(2020, 1, 1, 0, 0))
 }
 
 class User(id: EntityID<Int>): IntEntity(id) {
@@ -85,5 +87,16 @@ object UsersCRUD {
         return User.find {
             Users.isActive eq true
         }.toList()
+    }
+
+    fun getTariffActivationDate(user: User, date: DateTime): DateTime {
+        return if (user.tariffActivationDate.isBefore(date))
+            user.tariffActivationDate
+        else {
+            TariffHistory.find {
+                TariffsHistory.userId eq user.id and
+                        (TariffsHistory.beginDate lessEq date and ((TariffsHistory.endDate greater date) or (TariffsHistory.endDate.isNull())))
+            }.toList().first().beginDate
+        }
     }
 }

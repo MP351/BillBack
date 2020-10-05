@@ -147,7 +147,7 @@ object UsersProcessor {
                                         it.user.isActive
                                 ),
                                 it.beginDate.millis,
-                                it.endDate.millis
+                                it.endDate!!.millis
                         )
                     }
                 })

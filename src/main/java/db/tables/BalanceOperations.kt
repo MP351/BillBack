@@ -22,15 +22,15 @@ class BalanceOperation(id: EntityID<Int>): IntEntity(id){
 }
 
 class BalanceOperationCRUD {
-    fun add(userId: Int, typeId: Int): EntityID<Int> {
-        return addAndGet(userId, typeId).id
+    fun add(user: User, typeId: Int): EntityID<Int> {
+        return addAndGet(user, typeId).id
     }
 
-    fun addAndGet(userId: Int, typeId: Int): BalanceOperation {
+    fun addAndGet(user: User, typeId: Int): BalanceOperation {
         return BalanceOperation.new {
-            user = User.findById(userId) ?: throw NoSuchElementException("No such user")
-            date = DateTime(System.currentTimeMillis())
-            type = BalanceOperationType.findById(typeId) ?: throw NoSuchElementException("No such type")
+            this.user = user
+            this.date = DateTime(System.currentTimeMillis())
+            this.type = BalanceOperationType.findById(typeId) ?: throw NoSuchElementException("No such type")
         }
     }
 

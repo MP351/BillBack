@@ -1,7 +1,6 @@
 package db.tables
 
 import WithdrawsEntity
-import db.DbQueries
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -19,7 +18,7 @@ object Withdraws: IntIdTable() {
     val reasonId: Column<EntityID<Int>> = reference("reason_id", WithdrawReasons)
     val beginDate: Column<DateTime> = date("begin_date")
     val endDate: Column<DateTime> = date("end_date")
-    val scheduled_date: Column<DateTime> = date("scheduled_date")
+    val scheduledDate: Column<DateTime> = date("scheduled_date")
 }
 
 class Withdraw(id: EntityID<Int>): IntEntity(id) {
@@ -30,7 +29,7 @@ class Withdraw(id: EntityID<Int>): IntEntity(id) {
     var reason by WithdrawReason referencedOn Withdraws.reasonId
     var beginDate by Withdraws.beginDate
     var endDate by Withdraws.endDate
-    var scheduledDate by Withdraws.scheduled_date
+    var scheduledDate by Withdraws.scheduledDate
 }
 
 object WithdrawsCRUD {
@@ -63,7 +62,7 @@ object WithdrawsCRUD {
     fun getUnprocessedWithdraws(): List<Withdraw> {
         return Withdraw.find {
             Withdraws.operationId.isNull() and
-                    Withdraws.scheduled_date.lessEq(DateTime())
+                    Withdraws.scheduledDate.lessEq(DateTime())
         }.toList()
     }
 }

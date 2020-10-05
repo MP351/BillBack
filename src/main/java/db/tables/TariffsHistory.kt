@@ -17,7 +17,7 @@ object TariffsHistory: IntIdTable() {
     val tariffId: Column<EntityID<Int>> = reference("tariff_id", Tariffs)
     val userId: Column<EntityID<Int>> = reference("user_id", Users)
     val beginDate: Column<DateTime> = date("begin_date")
-    val endDate: Column<DateTime> = date("end_date")
+    val endDate: Column<DateTime?> = date("end_date").nullable()
 }
 
 class TariffHistory(id: EntityID<Int>): IntEntity(id) {
