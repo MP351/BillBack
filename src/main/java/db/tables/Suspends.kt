@@ -110,7 +110,7 @@ object SuspendsCRUD {
     fun getEndingSuspendForUser(user: User, dateTime: DateTime): Suspend? {
         return Suspend.find {
             (Suspends.userId eq user.id) and (Suspends.endDate eq dateTime)
-        }.toList().first()
+        }.toList().firstOrNull()
     }
 
     fun getSuspendsForActiveUnsuspendedUsers(date: DateTime): List<Suspend> {
@@ -137,5 +137,12 @@ object SuspendsCRUD {
         return Suspend.find {
             Suspends.endDate eq date
         }.toList()
+    }
+
+    fun getBegunSuspendForUser(user: User, date: DateTime): Suspend? {
+        return Suspend.find {
+            Suspends.userId eq user.id and
+                    (Suspends.beginDate eq date)
+        }.toList().firstOrNull()
     }
 }

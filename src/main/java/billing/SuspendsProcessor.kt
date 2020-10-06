@@ -1,6 +1,7 @@
 package billing
 
 import billing.balance.BalanceProcessor
+import db.tables.Suspend
 import db.tables.SuspendsCRUD
 import db.tables.User
 import db.tables.UsersCRUD
@@ -16,17 +17,27 @@ object SuspendsProcessor {
     fun proceedScheduledSuspends(date: DateTime = DateTime()) {
         val suspends = suspendsCRUD.getSuspendsForActiveUnsuspendedUsers(date)
         suspends.forEach {
-            val beginOfPeriod = getBeginningOfPeriod(it.user, date)
-            val endOfPeriod = it.beginDate
-
-            BalanceProcessor.scheduleWithdraws(it.user, beginOfPeriod, endOfPeriod)
-            BalanceProcessor.removeScheduledWithdraws(it.user, date.getFirstDayOfNextMonth())
-            it.user.isSuspended = true
-            it.user.lastProcessedTime = DateTime()
+            proceedSuspend(it, date)
         }
     }
 
-    fun getBeginningOfPeriod(user: User, date: DateTime): DateTime {
+    fun proceedSuspendForUser(user: User, date: DateTime) {
+        suspendsCRUD.getBegunSuspendForUser(user, date)?.let {
+            proceedSuspend(it, date)
+        }
+    }
+
+    private fun proceedSuspend(suspend: Suspend, date: DateTime) {
+        val beginOfPeriod = getBeginningOfPeriod(suspend.user, date)
+        val endOfPeriod = suspend.beginDate
+
+        BalanceProcessor.scheduleWithdraws(suspend.user, beginOfPeriod, endOfPeriod)
+        BalanceProcessor.removeScheduledWithdraws(suspend.user, date.getFirstDayOfNextMonth())
+        suspend.user.isSuspended = true
+        suspend.user.lastProcessedTime = date
+    }
+
+    private fun getBeginningOfPeriod(user: User, date: DateTime): DateTime {
         val tariffActivationTime = usersCRUD.getTariffActivationDate(user, date)
         val firstDay = date.getFirstDayOfMonth()
         val closestSuspendEnd = suspendsCRUD.getLastSuspendEnding(user, date) ?: DateTime(Long.MIN_VALUE)
@@ -43,10 +54,20 @@ object SuspendsProcessor {
 
     fun proceedScheduledResumes(date: DateTime = DateTime()) {
             suspendsCRUD.getSuspendsScheduledForResume(date).forEach {
-                BalanceProcessor.scheduleWithdraws(it.user, date, date.getFirstDayOfNextMonth())
-                it.user.isSuspended = false
-                it.isCompleted = true
-                it.user.lastProcessedTime = DateTime()
+                proceedResume(it, date)
             }
+    }
+
+    fun proceedResumeForUser(user: User, date: DateTime) {
+        suspendsCRUD.getEndingSuspendForUser(user, date)?.let {
+            proceedResume(it, date)
+        }
+    }
+
+    private fun proceedResume(suspend: Suspend, date: DateTime) {
+        BalanceProcessor.scheduleWithdraws(suspend.user, date, date.getFirstDayOfNextMonth())
+        suspend.user.isSuspended = false
+        suspend.isCompleted = true
+        suspend.user.lastProcessedTime = date
     }
 }

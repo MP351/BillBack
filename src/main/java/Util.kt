@@ -56,7 +56,7 @@ data class RecalculationReasonEntity(val _id: Int? = null, val name: String)
 data class RecalculationEntity(val _id: Int? = null, val userId: Int, val amount: Int, val beginDate: Long, val endDate: Long, val operationId: Int? = null, val reasonId: Int)
 
 data class SuspendReasonEntity(val _id: Int? = null, val name: String)
-data class SuspendEntityNew(val _id: Int? = null, val userId: Int, val beginDate: Long, val endDate: Long?, val reason_id: Int, val operationId: Int?, val comment: String)
+data class SuspendEntityNew(val _id: Int? = null, val userId: Int, val beginDate: Long, val endDate: Long?, val reason_id: Int, val comment: String)
 
 data class BalanceHistoryEntity(val _id: Int? = null, val userId: Int, val operationId: Int, val amount: Int)
 

@@ -30,7 +30,9 @@ object DbSettings {
                         BalanceOperationTypes,
                         BalanceOperations,
                         UserBalancesHistory,
-                        UsersBalances
+                        UsersBalances,
+                        Withdraws,
+                        WithdrawReasons
                 )
                 SchemaUtils.createMissingTablesAndColumns(
                         Tariffs,
@@ -44,7 +46,9 @@ object DbSettings {
                         BalanceOperationTypes,
                         BalanceOperations,
                         UserBalancesHistory,
-                        UsersBalances
+                        UsersBalances,
+                        Withdraws,
+                        WithdrawReasons
                 )
             }
         }

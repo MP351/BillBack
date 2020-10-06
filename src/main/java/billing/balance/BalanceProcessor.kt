@@ -11,11 +11,8 @@ import org.joda.time.DateTime
 import kotlin.NoSuchElementException
 
 object BalanceProcessor {
-    private val userBalanceCRUD = UsersBalancesCRUD
     private val userBalanceHistoryCRUD = UserBalancesHistoryCRUD()
     private val balanceOperationsCRUD = BalanceOperationCRUD()
-    private val withdrawCRUD = WithdrawsCRUD
-    private val suspendCRUD = SuspendsCRUD
 
     // Initiation for newly added user
     fun initBalance(user: User, amount: Int? = null) {
@@ -57,36 +54,6 @@ object BalanceProcessor {
         }
     }
 
-    private fun getSuspendDaysCount(userId: Int, beginPeriod: DateTime, endPeriod: DateTime): Int {
-        val suspends = suspendCRUD.getSuspendsForUserInPeriod(userId, beginPeriod, endPeriod)
-        var count = 0
-
-        suspends.forEach {
-            val begin = if (it.beginDate.isBefore(beginPeriod))
-                beginPeriod
-            else
-                it.beginDate
-
-            val end = when {
-                it.endDate == null -> endPeriod
-                it.endDate!!.isAfter(endPeriod) -> endPeriod
-                else -> it.endDate!!
-            }
-
-            count += begin.days360(end)
-        }
-        return count
-    }
-
-    private fun isSuspendActive(user: User, end: DateTime): Boolean {
-        val suspend = Suspend.find {
-            (Suspends.userId eq user.id) and
-                    (Suspends.beginDate lessEq end) and
-                    (Suspends.endDate.isNull() or (Suspends.endDate greater end))
-        }
-        return !suspend.empty()
-    }
-
     private fun scheduleNextMonthWithdrawing(user: User, begin: DateTime = DateTime().getToday(), end: DateTime, reason: WithdrawReason): Withdraw {
         val activeDays = begin.days360(end)
         val amount = if (activeDays == 30)
@@ -101,6 +68,17 @@ object BalanceProcessor {
             this.beginDate = begin
             this.endDate = end
             this.scheduledDate = end
+        }
+    }
+
+    fun proceedWithdraw(user: User, date: DateTime) {
+        val reason = WithdrawReason.findById(1) ?: throw NoSuchElementException("No such reason")
+        Withdraw.find {
+            Withdraws.userId eq user.id and
+                    (Withdraws.scheduledDate eq date)
+        }.forEach {
+            it.operation = makePaymentAndGetOperation(it.user, it.amount, true)
+            scheduleNextMonthWithdrawing(it.user, it.endDate, it.endDate.getFirstDayOfNextMonth(), reason)
         }
     }
 
