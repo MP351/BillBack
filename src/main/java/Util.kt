@@ -46,9 +46,6 @@ data class UserWithTariffEntity(val contractNumber: Int, val firstName: String, 
 data class UserWithTariffEntityNew(val contractNumber: Int, val firstName: String, val lastName: String, val fatherName: String, val tariff: TariffEntityDB, val isActive: Boolean)
 
 
-
-object DateFormatter: SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
-
 data class BalanceOperationTypeEntity(val _id: Int? = null, val name: String)
 data class BalanceOperationEntity(val _id: Int? = null, val userId: Int, val date: Long, val typeId: Int)
 

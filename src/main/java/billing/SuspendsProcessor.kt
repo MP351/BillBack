@@ -1,6 +1,7 @@
 package billing
 
 import billing.balance.BalanceProcessor
+import days360
 import db.tables.Suspend
 import db.tables.SuspendsCRUD
 import db.tables.User
@@ -22,6 +23,9 @@ object SuspendsProcessor {
     }
 
     fun proceedSuspendForUser(user: User, date: DateTime) {
+        if (user.isSuspended)
+            return
+
         suspendsCRUD.getBegunSuspendForUser(user, date)?.let {
             proceedSuspend(it, date)
         }
@@ -31,7 +35,8 @@ object SuspendsProcessor {
         val beginOfPeriod = getBeginningOfPeriod(suspend.user, date)
         val endOfPeriod = suspend.beginDate
 
-        BalanceProcessor.scheduleWithdraws(suspend.user, beginOfPeriod, endOfPeriod)
+        if (beginOfPeriod.days360(endOfPeriod) > 0)
+            BalanceProcessor.scheduleWithdraws(suspend.user, beginOfPeriod, endOfPeriod)
         BalanceProcessor.removeScheduledWithdraws(suspend.user, date.getFirstDayOfNextMonth())
         suspend.user.isSuspended = true
         suspend.user.lastProcessedTime = date

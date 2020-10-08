@@ -21,7 +21,16 @@ fun main() {
     BasicConfigurator.configure()
     DbSettings.db
 
-//    Watcher("/home/maxpayne/Share/SberTest").isRunning = true
+    initBalances()
+    initWithdraws()
+    OutOfDateBalanceActualizer().check()
+    runBlocking {
+        withContext(Dispatchers.IO) {
+            PaymentsWatcher().isRunning = true
+            ProcessingWatcher().isRunning = true
+        }
+    }
+    Watcher("/home/maxpayne/Share/SberTest").isRunning = true
 //    embeddedServer(Netty, port = 8080) {
 //        webModule()
 //    }.start(true)
@@ -32,14 +41,7 @@ fun main() {
 //                DateTime(2020, 6, 25, 20, 0)
 //        ))
     }
-    initBalances()
-    OutOfDateBalanceActualizer().check()
-    runBlocking {
-        withContext(Dispatchers.IO) {
-            PaymentsWatcher().isRunning = true
-            ProcessingWatcher().isRunning = true
-        }
-    }
+
 
 }
 

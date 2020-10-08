@@ -9,7 +9,7 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object SuspendReasons: IntIdTable() {
-    val name = varchar("name", 100)
+    val name = varchar("reason_name", 100)
 }
 
 class SuspendReason(id: EntityID<Int>): IntEntity(id) {

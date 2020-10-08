@@ -10,7 +10,7 @@ import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object BalanceOperationTypes: IntIdTable() {
-    val name: Column<String> = varchar("name", 100)
+    val name: Column<String> = varchar("type_name", 100)
 }
 
 class BalanceOperationType(id: EntityID<Int>): IntEntity(id){

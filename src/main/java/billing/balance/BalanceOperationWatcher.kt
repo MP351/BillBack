@@ -9,6 +9,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import org.joda.time.MutableDateTime
 import java.util.concurrent.TimeUnit
@@ -29,10 +30,12 @@ class PaymentsWatcher {
     }
 
     private suspend fun watch() {
-        val unprocessedPayments = paymentsProcessor.getUnprocessedPayments()
-        balanceProcessor.processedNewPayments(unprocessedPayments)
+        while (isRunning) {
+            val unprocessedPayments = paymentsProcessor.getUnprocessedPayments()
+            balanceProcessor.processedNewPayments(unprocessedPayments)
 
-        delay(refreshPeriod)
+            delay(refreshPeriod)
+        }
     }
 }
 
@@ -51,11 +54,13 @@ class ProcessingWatcher {
     }
 
     private suspend fun watch() {
-        suspendsProcessor.proceedScheduledSuspends()
-        suspendsProcessor.proceedScheduledResumes()
-        balanceProcessor.proceedScheduledWithdraws()
+        while (isRunning) {
+            suspendsProcessor.proceedScheduledSuspends()
+            suspendsProcessor.proceedScheduledResumes()
+            balanceProcessor.proceedScheduledWithdraws()
 
-        delay(refreshPeriod)
+            delay(refreshPeriod)
+        }
     }
 }
 
@@ -65,13 +70,15 @@ class OutOfDateBalanceActualizer {
     private val balanceProcessor = BalanceProcessor
 
     fun check() {
-        if (!isDatabaseOutOfDate())
-            return
+        transaction {
+            if (!isDatabaseOutOfDate())
+                return@transaction
 
-        usersCRUD.getActiveUsers().filter {
-            it.lastProcessedTime.days360(DateTime()) > 0
-        }.forEach {
-            actualizeUser(it)
+            usersCRUD.getActiveUsers().filter {
+                it.lastProcessedTime.days360(DateTime()) > 0
+            }.forEach {
+                actualizeUser(it)
+            }
         }
     }
 

@@ -6,16 +6,18 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IdTable
+import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.transactions.transaction
 
-object UsersBalances: IdTable<Int>() {
-    override val id: Column<EntityID<Int>> = reference("id", BalanceOperations)
+object UsersBalances: IntIdTable() {
+    val userId: Column<EntityID<Int>> = reference("user_id", Users).uniqueIndex()
     val balance: Column<Int> = integer("balance")
 }
 
 class UserBalance(id: EntityID<Int>): IntEntity(id) {
     companion object: IntEntityClass<UserBalance>(UsersBalances)
+    var user by User referencedOn UsersBalances.userId
     var balance by UsersBalances.balance
 }
 

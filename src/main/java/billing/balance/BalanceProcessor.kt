@@ -17,8 +17,9 @@ object BalanceProcessor {
     // Initiation for newly added user
     fun initBalance(user: User, amount: Int? = null) {
         transaction {
-            UserBalance.new(user.id.value) {
-                balance = amount ?: 0
+            UserBalance.new {
+                this.user = user
+                this.balance = amount ?: 0
 
                 val currentDate = DateTime()
                 scheduleNextMonthWithdrawing(user = user, end = currentDate.getFirstDayOfNextMonth(),
@@ -28,17 +29,21 @@ object BalanceProcessor {
     }
 
     fun processedNewPayments(payments: List<Payment>) {
-        payments.forEach {
-            it.operation = makePaymentAndGetOperation(
-                    it.contractNumber,
-                    it.totalAmount
-            )
+        transaction {
+            payments.forEach {
+                it.operation = makePaymentAndGetOperation(
+                        it.contractNumber,
+                        it.totalAmount
+                )
+            }
         }
     }
 
     private fun makePaymentAndGetOperation(user: User, amount: Int, isWithdrawing: Boolean = false): BalanceOperation {
         return transaction {
-            val currentBalance = UserBalance[user.id]
+            val currentBalance = UserBalance.find {
+                UsersBalances.userId eq user.id
+            }.toList().first()
 
             val operation = if (isWithdrawing) {
                 currentBalance.balance -= amount
@@ -78,7 +83,8 @@ object BalanceProcessor {
                     (Withdraws.scheduledDate eq date)
         }.forEach {
             it.operation = makePaymentAndGetOperation(it.user, it.amount, true)
-            scheduleNextMonthWithdrawing(it.user, it.endDate, it.endDate.getFirstDayOfNextMonth(), reason)
+            if (!user.isSuspended)
+                scheduleNextMonthWithdrawing(it.user, it.endDate, it.endDate.getFirstDayOfNextMonth(), reason)
         }
     }
 

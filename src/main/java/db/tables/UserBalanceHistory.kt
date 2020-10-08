@@ -6,7 +6,7 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IdTable
 
 object UserBalancesHistory: IdTable<Int>() {
-    override val id = reference("id", BalanceOperations)
+    override val id = reference("id", BalanceOperations).uniqueIndex()
     val userId = reference("user_id", Users)
     val amount = integer("amount")
 }
