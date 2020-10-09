@@ -34,35 +34,52 @@ class Withdraw(id: EntityID<Int>): IntEntity(id) {
 
 object WithdrawsCRUD {
     fun add(entity: WithdrawsEntity): EntityID<Int> {
-        return transaction {
-            Withdraw.new {
-                user = User.findById(entity.userId) ?: throw NoSuchElementException("No such user")
-                operation = BalanceOperation.findById(entity.operationId ?: -1)
-                amount = entity.amount
-                reason = WithdrawReason.findById(entity.reasonId) ?: throw NoSuchElementException("No such reason")
-                beginDate = DateTime(entity.beginDate)
-                endDate = DateTime(entity.endDate)
-                scheduledDate = DateTime(entity.scheduledDate)
-            }
-        }.id
+        return addAndGet(
+                User.findById(entity.userId) ?: throw NoSuchElementException("No such user"),
+                entity.amount,
+                WithdrawReason.findById(entity.reasonId) ?: throw NoSuchElementException("No such reason"),
+                DateTime(entity.beginDate),
+                DateTime(entity.endDate),
+                DateTime(entity.scheduledDate)
+        ).id
+    }
+
+    fun addAndGet(user: User, amount: Int, reason: WithdrawReason, beginDate: DateTime, endDate: DateTime, scheduledDate: DateTime): Withdraw {
+        return Withdraw.new {
+            this.user = user
+            this.amount = amount
+            this.reason = reason
+            this.beginDate = beginDate
+            this.endDate = endDate
+            this.scheduledDate = scheduledDate
+        }
     }
 
     fun getAll(): List<Withdraw> {
-        return transaction {
-            Withdraw.all().toList()
-        }
+        return Withdraw.all().toList()
     }
 
     fun getById(id: Int): Withdraw {
-        return transaction {
-            Withdraw.findById(id) ?: throw NoSuchElementException("No such withdraw")
-        }
+        return Withdraw.findById(id) ?: throw NoSuchElementException("No such withdraw")
     }
 
     fun getUnprocessedWithdraws(): List<Withdraw> {
         return Withdraw.find {
             Withdraws.operationId.isNull() and
                     Withdraws.scheduledDate.lessEq(DateTime())
+        }.toList()
+    }
+
+    fun getScheduledWithdrawsForUser(user: User, date: DateTime): List<Withdraw> {
+        return Withdraw.find {
+            Withdraws.userId eq user.id and
+                    (Withdraws.scheduledDate eq date)
+        }.toList()
+    }
+
+    fun getScheduledWithdraws(date: DateTime): List<Withdraw> {
+        return Withdraw.find {
+            Withdraws.scheduledDate eq date
         }.toList()
     }
 }

@@ -44,75 +44,55 @@ class Payment(id: EntityID<Int>): IntEntity(id){
     }
 }
 
-object PaymentsCRUD: DbQueries<PaymentEntity, Payment> {
-    override fun add(entity: PaymentEntity): EntityID<Int> {
-        return transaction {
-            Payment.new {
-                operationDateTime = DateTime(entity.dateTime)
-                divNumber = entity.divisionNumber
-                cashierNumber = entity.cashierNumber
-                opcode = entity.operationCode
-                contractNumber = User.findById(entity.contractNumber)
-                        ?: throw NoSuchElementException("No user with such id")
-                name = entity.name
-                totalAmount = entity.totalAmount
-                incomeAmount = entity.incomeAmount
-                commissionAmount = entity.commissionAmount
-                operation = BalanceOperation.findById(entity.operationId ?: -1)
-            }.id
-        }
+object PaymentsCRUD {
+    fun add(entity: PaymentEntity): EntityID<Int> {
+        return Payment.new {
+            operationDateTime = DateTime(entity.dateTime)
+            divNumber = entity.divisionNumber
+            cashierNumber = entity.cashierNumber
+            opcode = entity.operationCode
+            contractNumber = User.findById(entity.contractNumber)
+                    ?: throw NoSuchElementException("No user with such id")
+            name = entity.name
+            totalAmount = entity.totalAmount
+            incomeAmount = entity.incomeAmount
+            commissionAmount = entity.commissionAmount
+            operation = BalanceOperation.findById(entity.operationId ?: -1)
+        }.id
     }
 
-    override fun getAll(): List<Payment> {
-        return transaction {
-            Payment.all().toList()
-        }
+    fun getAll(): List<Payment> {
+        return Payment.all().toList()
     }
 
-    override fun getById(id: Int): Payment {
-        return transaction {
-            Payment.findById(id) ?: throw NoSuchElementException("No such payment")
-        }
-    }
-
-    override fun updateById(id: Int, entity: PaymentEntity) {
-        TODO("Not yet implemented")
-    }
-
-    override fun deleteById(id: Int) {
-        TODO("Not yet implemented")
+    fun getById(id: Int): Payment {
+        return Payment.findById(id) ?: throw NoSuchElementException("No such payment")
     }
 
     fun getPaymentsInPeriod(begin: DateTime, end: DateTime): List<Payment> {
-        return transaction {
-            Payment.find {
-                (Payments.operationDateTime greaterEq begin) and
-                        (Payments.operationDateTime less end)
-            }.toList()
-        }
+        return Payment.find {
+            (Payments.operationDateTime greaterEq begin) and
+                    (Payments.operationDateTime less end)
+        }.toList()
     }
 
-    fun getPaymentsForUser(id: Int): Payment {
-        return transaction {
-            Payment.findById(id) ?: throw NoSuchElementException("No such payment record")
-        }
+    fun getPaymentsForUser(id: Int): List<Payment> {
+        return Payment.find {
+            Payments.contractNumber eq id
+        }.toList()
     }
 
     fun getPaymentsForUserInPeriod(id: Int, begin: DateTime, end: DateTime): List<Payment> {
-        return transaction {
-            Payment.find {
-                (Payments.id eq id) and
-                        (Payments.operationDateTime greaterEq begin) and
-                        (Payments.operationDateTime less end)
-            }.toList()
-        }
+        return Payment.find {
+            (Payments.id eq id) and
+                    (Payments.operationDateTime greaterEq begin) and
+                    (Payments.operationDateTime less end)
+        }.toList()
     }
 
     fun getUnprocessedPayments(): List<Payment> {
-        return transaction {
-            Payment.find {
-                Payments.operation_id.isNull()
-            }.toList()
-        }
+        return Payment.find {
+            Payments.operation_id.isNull()
+        }.toList()
     }
 }

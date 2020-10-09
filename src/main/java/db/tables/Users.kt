@@ -8,7 +8,6 @@ import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.jodatime.date
 import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 
 object Users: IntIdTable() {
@@ -55,8 +54,7 @@ object UsersCRUD {
 
     fun addAndGet(id: Int?, firstName: String, lastName: String, fatherName: String,
                   tariffId: Int, isSuspended: Boolean = true, isActive: Boolean = true, lastProcessedTime: DateTime): User {
-        return transaction {
-            User.new(id) {
+        return User.new(id) {
                 this.firstName = firstName
                 this.lastName = lastName
                 this.fatherName = fatherName
@@ -67,20 +65,15 @@ object UsersCRUD {
                 this.isActive = isActive
                 this.lastProcessedTime = lastProcessedTime
             }
-        }
     }
 
     fun getAll(): List<User> {
-        return transaction {
-            User.all().toList()
-        }
+        return User.all().toList()
     }
 
     fun getById(id: Int): User {
-        return transaction {
-            User.findById(id)
-                    ?: throw NoSuchElementException("No such user")
-        }
+        return User.findById(id)
+                ?: throw NoSuchElementException("No such user")
     }
 
     fun getActiveUsers(): List<User> {

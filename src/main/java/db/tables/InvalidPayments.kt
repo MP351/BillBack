@@ -41,41 +41,27 @@ class InvalidPayment(id: EntityID<Int>): IntEntity(id) {
     }
 }
 
-object InvalidPaymentsCRUD: DbQueries<PaymentEntity, InvalidPayment> {
-    override fun add(entity: PaymentEntity): EntityID<Int> {
-        return transaction {
-            InvalidPayment.new {
-                operationDateTime = DateTime(entity.dateTime)
-                divNumber = entity.divisionNumber
-                cashierNumber = entity.cashierNumber
-                opcode = entity.operationCode
-                contractNumber = entity.contractNumber
-                name = entity.name
-                totalAmount = entity.totalAmount
-                incomeAmount = entity.incomeAmount
-                commissionAmount = entity.commissionAmount
-            }.id
-        }
+object InvalidPaymentsCRUD {
+    fun add(entity: PaymentEntity): EntityID<Int> {
+        return InvalidPayment.new {
+            operationDateTime = DateTime(entity.dateTime)
+            divNumber = entity.divisionNumber
+            cashierNumber = entity.cashierNumber
+            opcode = entity.operationCode
+            contractNumber = entity.contractNumber
+            name = entity.name
+            totalAmount = entity.totalAmount
+            incomeAmount = entity.incomeAmount
+            commissionAmount = entity.commissionAmount
+        }.id
     }
 
-    override fun getAll(): List<InvalidPayment> {
-        return transaction {
-            InvalidPayment.all().toList()
-        }
+    fun getAll(): List<InvalidPayment> {
+        return InvalidPayment.all().toList()
     }
 
-    override fun getById(id: Int): InvalidPayment {
-        return transaction {
-            InvalidPayment.findById(id)
-                    ?: throw NoSuchElementException("No such payments")
-        }
-    }
-
-    override fun updateById(id: Int, entity: PaymentEntity) {
-        TODO("Not yet implemented")
-    }
-
-    override fun deleteById(id: Int) {
-        TODO("Not yet implemented")
+    fun getById(id: Int): InvalidPayment {
+        return InvalidPayment.findById(id)
+                ?: throw NoSuchElementException("No such payments")
     }
 }

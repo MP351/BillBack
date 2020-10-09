@@ -21,44 +21,26 @@ class UserBalance(id: EntityID<Int>): IntEntity(id) {
     var balance by UsersBalances.balance
 }
 
-object UsersBalancesCRUD: DbQueries<UserBalanceEntity, UserBalance> {
-    override fun add(entity: UserBalanceEntity): EntityID<Int> {
-        return transaction {
-            UserBalance.new {
-                balance = entity.balance
-            }
+object UsersBalancesCRUD {
+    fun add(entity: UserBalanceEntity): EntityID<Int> {
+        return UserBalance.new {
+            balance = entity.balance
         }.id
     }
 
-    override fun getAll(): List<UserBalance> {
+    fun getAll(): List<UserBalance> {
+        return UserBalance.all().toList()
+    }
+
+    fun getById(id: Int): UserBalance {
+        return UserBalance.findById(id) ?: throw NoSuchElementException("Nu such balance record")
+    }
+
+    fun getByUserId(id: Int): UserBalance? {
         return transaction {
-            UserBalance.all()
-        }.toList()
-    }
-
-    override fun getById(id: Int): UserBalance {
-        return transaction {
-            UserBalance.findById(id) ?: throw NoSuchElementException("Nu such balance record")
-        }
-    }
-
-    override fun updateById(id: Int, entity: UserBalanceEntity) {
-        transaction {
-            val balance = UserBalance.findById(id) ?: throw NoSuchElementException("No such balance record")
-            balance.balance = entity.balance
-        }
-    }
-
-    override fun deleteById(id: Int) {
-        transaction {
-            val balance = UserBalance.findById(id) ?: throw NoSuchElementException("No such balance record")
-            balance.delete()
-        }
-    }
-
-    fun getByUserId(id: Int): UserBalance {
-        return transaction {
-            UserBalance.findById(id) ?: throw NoSuchElementException("No such balance record")
+            UserBalance.find {
+                UsersBalances.userId eq id
+            }.toList().firstOrNull()
         }
     }
 }

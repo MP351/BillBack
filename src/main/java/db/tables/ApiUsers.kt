@@ -25,52 +25,36 @@ class ApiUser(id: EntityID<Int>): IntEntity(id) {
     }
 }
 
-object ApiUsersCRUD: DbQueries<LoginEntity, ApiUser> {
-    override fun add(entity: LoginEntity): EntityID<Int> {
-        return transaction {
-            ApiUser.new {
+object ApiUsersCRUD {
+    fun add(entity: LoginEntity): EntityID<Int> {
+        return ApiUser.new {
                 login = entity.login
                 password = entity.password
-            }.id
-        }
+        }.id
     }
 
-    override fun getAll(): List<ApiUser> {
-        return transaction {
-            ApiUser.all().toList()
-        }
+    fun getAll(): List<ApiUser> {
+        return ApiUser.all().toList()
     }
 
-    override fun getById(id: Int): ApiUser {
-        return transaction {
-            ApiUser.findById(id) ?: throw NoSuchElementException("No such ApiUser")
-        }
-    }
-
-    override fun updateById(id: Int, entity: LoginEntity) {
-        TODO("Not yet implemented")
-    }
-
-    override fun deleteById(id: Int) {
-        TODO("Not yet implemented")
+    fun getById(id: Int): ApiUser {
+        return ApiUser.findById(id) ?: throw NoSuchElementException("No such ApiUser")
     }
 
     fun getByName(name: String): ApiUser {
-        return transaction {
-            val user = ApiUser.find {
-                ApiUsers.login eq name
-            }.toList()
+        val user = ApiUser.find {
+            ApiUsers.login eq name
+        }.toList()
 
-            when(user.size) {
-                0 -> {
-                    return@transaction user.first()
-                }
-                1 -> {
-                    throw NoSuchElementException("No such user")
-                }
-                else -> {
-                    throw IllegalArgumentException("Too many users")
-                }
+        when(user.size) {
+            0 -> {
+                return user.first()
+            }
+            1 -> {
+                throw NoSuchElementException("No such user")
+            }
+            else -> {
+                throw IllegalArgumentException("Too many users")
             }
         }
     }

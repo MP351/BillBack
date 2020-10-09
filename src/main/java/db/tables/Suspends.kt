@@ -36,73 +36,61 @@ class Suspend(id: EntityID<Int>): IntEntity(id) {
 
 object SuspendsCRUD {
     fun add(entity: SuspendEntityNew): EntityID<Int> {
-        return transaction {
-            Suspend.new {
-                user = User.findById(entity.userId)
-                        ?: throw NoSuchElementException("No such user")
-                beginDate = DateTime(entity.beginDate)
-                endDate = when(entity.endDate) {
-                    null -> {
-                        null
-                    }
-                    else -> {
-                        DateTime(entity.endDate)
-                    }
+        return Suspend.new {
+            user = User.findById(entity.userId)
+                    ?: throw NoSuchElementException("No such user")
+            beginDate = DateTime(entity.beginDate)
+            endDate = when(entity.endDate) {
+                null -> {
+                    null
                 }
-                reason = SuspendReason.findById(entity.reason_id) ?: throw NoSuchElementException("No such reason")
-                notes = entity.comment
-            }.id
-        }
+                else -> {
+                    DateTime(entity.endDate)
+                }
+            }
+            reason = SuspendReason.findById(entity.reason_id) ?: throw NoSuchElementException("No such reason")
+            notes = entity.comment
+        }.id
     }
 
     fun getAll(): List<Suspend> {
-        return transaction {
-            Suspend.all().toList()
-        }
+        return Suspend.all().toList()
     }
 
     fun getById(id: Int): Suspend {
-        return transaction {
-            Suspend.findById(id) ?: throw NoSuchElementException("No such suspend")
-        }
+        return Suspend.findById(id) ?: throw NoSuchElementException("No such suspend")
     }
 
     fun getSuspendsForUserInPeriod(id: Int, begin: DateTime, end: DateTime): List<Suspend> {
-        return transaction {
-            Suspend.find {
-                (Suspends.userId eq id) and
-                        ((Suspends.endDate greaterEq begin) and (Suspends.endDate less end)) or
-                        ((Suspends.beginDate greaterEq begin) and (Suspends.beginDate less end)) or
-                        ((Suspends.beginDate lessEq begin) and (Suspends.endDate greaterEq begin))
-            }.toList()
-        }
+        return Suspend.find {
+            (Suspends.userId eq id) and
+                    ((Suspends.endDate greaterEq begin) and (Suspends.endDate less end)) or
+                    ((Suspends.beginDate greaterEq begin) and (Suspends.beginDate less end)) or
+                    ((Suspends.beginDate lessEq begin) and (Suspends.endDate greaterEq begin))
+        }.toList()
     }
 
     fun getSuspendsForContract(contractNumber: Int): List<Suspend> {
-        return transaction {
-            Suspend.find {
-                Suspends.userId eq contractNumber
-            }.toList()
-        }
+        return Suspend.find {
+            Suspends.userId eq contractNumber
+        }.toList()
     }
 
     fun getCurrentSuspension(contractNumber: Int): Suspend? {
-        return transaction {
-            val list = Suspend.find{
-                (Suspends.userId eq contractNumber) and
-                        (Suspends.beginDate.lessEq(DateTime())) and
-                        (Suspends.endDate.isNull())
-            }.toList()
-            when(list.size) {
-                0 -> {
-                    null
-                }
-                1 -> {
-                    list.first()
-                }
-                else -> {
-                    throw IllegalArgumentException("Wrong amount of suspends")
-                }
+        val list = Suspend.find{
+            (Suspends.userId eq contractNumber) and
+                    (Suspends.beginDate.lessEq(DateTime())) and
+                    (Suspends.endDate.isNull())
+        }.toList()
+        return when(list.size) {
+            0 -> {
+                null
+            }
+            1 -> {
+                list.first()
+            }
+            else -> {
+                throw IllegalArgumentException("Wrong amount of suspends")
             }
         }
     }

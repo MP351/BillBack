@@ -5,9 +5,7 @@ import days360
 import db.tables.User
 import db.tables.UsersCRUD
 import isToday
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
@@ -88,7 +86,7 @@ class OutOfDateBalanceActualizer {
             val date = processedDay.toDateTime()
             suspendsProcessor.proceedSuspendForUser(user, date)
             suspendsProcessor.proceedResumeForUser(user, date)
-            balanceProcessor.proceedWithdraw(user, date)
+            balanceProcessor.proceedScheduledWithdrawForUser(user, date)
 
             processedDay.addDays(1)
         }

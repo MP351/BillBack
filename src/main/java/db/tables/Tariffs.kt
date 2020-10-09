@@ -32,40 +32,24 @@ class Tariff(id: EntityID<Int>): IntEntity(id) {
     }
 }
 
-object TariffCRUD: DbQueries<TariffEntity, Tariff> {
-    override fun add(entity: TariffEntity): EntityID<Int> {
-        return transaction {
-            Tariff.new {
-                name = entity.name
-                price = entity.price
-                speedLimit = entity.speedLimits
-            }.id
-        }
+object TariffCRUD {
+    fun add(entity: TariffEntity): EntityID<Int> {
+        return Tariff.new {
+            name = entity.name
+            price = entity.price
+            speedLimit = entity.speedLimits
+        }.id
     }
 
-    override fun getAll(): List<Tariff> {
-        return transaction {
-            Tariff.all().toList()
-        }
+    fun getAll(): List<Tariff> {
+        return Tariff.all().toList()
     }
 
-    override fun getById(id: Int): Tariff {
-        return transaction {
-            Tariff.findById(id) ?: throw NoSuchElementException("No such tariff")
-        }
-    }
-
-    override fun updateById(id: Int, entity: TariffEntity) {
-        TODO("Not yet implemented")
-    }
-
-    override fun deleteById(id: Int) {
-        TODO("Not yet implemented")
+    fun getById(id: Int): Tariff {
+        return Tariff.findById(id) ?: throw NoSuchElementException("No such tariff")
     }
 
     fun getTariffForUser(contractNumber: Int): Tariff {
-        return transaction {
-            User.findById(contractNumber)?.tariff ?: throw NoSuchElementException("No user or tariff with such id")
-        }
+        return User.findById(contractNumber)?.tariff ?: throw NoSuchElementException("No user or tariff with such id")
     }
 }

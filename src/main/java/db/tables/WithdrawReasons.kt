@@ -17,32 +17,18 @@ class WithdrawReason(id: EntityID<Int>): IntEntity(id) {
     var name by WithdrawReasons.name
 }
 
-object WithdrawReasonsCRUD: DbQueries<WithdrawReasonEntity, WithdrawReason> {
-    override fun add(entity: WithdrawReasonEntity): EntityID<Int> {
-        return transaction {
-            WithdrawReason.new {
-                name = entity.name
-            }.id
-        }
+object WithdrawReasonsCRUD {
+    fun add(entity: WithdrawReasonEntity): EntityID<Int> {
+        return WithdrawReason.new {
+            name = entity.name
+        }.id
     }
 
-    override fun getAll(): List<WithdrawReason> {
-        return transaction {
-            WithdrawReason.all().toList()
-        }
+    fun getAll(): List<WithdrawReason> {
+        return WithdrawReason.all().toList()
     }
 
-    override fun getById(id: Int): WithdrawReason {
-        return transaction {
-            WithdrawReason.findById(id) ?: throw NoSuchElementException("No such element")
-        }
-    }
-
-    override fun updateById(id: Int, entity: WithdrawReasonEntity) {
-        TODO("Not yet implemented")
-    }
-
-    override fun deleteById(id: Int) {
-        TODO("Not yet implemented")
+    fun getById(id: Int): WithdrawReason {
+        return WithdrawReason.findById(id) ?: throw NoSuchElementException("No such element")
     }
 }

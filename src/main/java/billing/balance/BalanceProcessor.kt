@@ -4,15 +4,13 @@ import days360
 import db.tables.*
 import getFirstDayOfNextMonth
 import getToday
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
-import kotlin.NoSuchElementException
 
 object BalanceProcessor {
     private val userBalanceHistoryCRUD = UserBalancesHistoryCRUD()
     private val balanceOperationsCRUD = BalanceOperationCRUD()
+    private val withdrawCRUD = WithdrawsCRUD
 
     // Initiation for newly added user
     fun initBalance(user: User, amount: Int? = null) {
@@ -41,21 +39,19 @@ object BalanceProcessor {
 
     private fun makePaymentAndGetOperation(user: User, amount: Int, isWithdrawing: Boolean = false): BalanceOperation {
         return transaction {
-            val currentBalance = UserBalance.find {
-                UsersBalances.userId eq user.id
-            }.toList().first()
+            UsersBalancesCRUD.getByUserId(user.id.value)?.let {
+                val operation = if (isWithdrawing) {
+                    it.balance -= amount
+                    balanceOperationsCRUD.addAndGet(user, 1)
+                } else {
+                    it.balance += amount
+                    balanceOperationsCRUD.addAndGet(user, 2)
+                }
 
-            val operation = if (isWithdrawing) {
-                currentBalance.balance -= amount
-                balanceOperationsCRUD.addAndGet(user, 1)
-            } else {
-                currentBalance.balance += amount
-                balanceOperationsCRUD.addAndGet(user, 2)
-            }
+                userBalanceHistoryCRUD.add(operation.id.value, user, it.balance)
 
-            userBalanceHistoryCRUD.add(operation.id.value, user, currentBalance.balance)
-
-            operation
+                operation
+            } ?: throw NoSuchElementException("Can't find such balance")
         }
     }
 
@@ -66,36 +62,25 @@ object BalanceProcessor {
         else
             user.tariff.price / 30 * activeDays
 
-        return Withdraw.new {
-            this.user = user
-            this.amount = amount
-            this.reason = reason
-            this.beginDate = begin
-            this.endDate = end
-            this.scheduledDate = end
-        }
+        return withdrawCRUD.addAndGet(user, amount, reason, begin, end, end)
     }
 
-    fun proceedWithdraw(user: User, date: DateTime) {
-        val reason = WithdrawReason.findById(1) ?: throw NoSuchElementException("No such reason")
-        Withdraw.find {
-            Withdraws.userId eq user.id and
-                    (Withdraws.scheduledDate eq date)
-        }.forEach {
-            it.operation = makePaymentAndGetOperation(it.user, it.amount, true)
-            if (!user.isSuspended)
-                scheduleNextMonthWithdrawing(it.user, it.endDate, it.endDate.getFirstDayOfNextMonth(), reason)
+    fun proceedScheduledWithdrawForUser(user: User, date: DateTime) {
+        withdrawCRUD.getScheduledWithdrawsForUser(user, date).forEach {
+            proceedWithdraw(it)
         }
     }
 
     fun proceedScheduledWithdraws(date: DateTime = DateTime()) {
-        val reason = WithdrawReason.findById(1) ?: throw NoSuchElementException("No such reason")
-        Withdraw.find {
-            Withdraws.scheduledDate eq date
-        }.forEach {
-            it.operation = makePaymentAndGetOperation(it.user, it.amount, true)
-            scheduleNextMonthWithdrawing(it.user, it.endDate, it.endDate.getFirstDayOfNextMonth(), reason)
+        withdrawCRUD.getScheduledWithdraws(date).forEach {
+            proceedWithdraw(it)
         }
+    }
+
+    private fun proceedWithdraw(withdraw: Withdraw) {
+        withdraw.operation = makePaymentAndGetOperation(withdraw.user, withdraw.amount, true)
+        if (!withdraw.user.isSuspended)
+            scheduleNextMonthWithdrawing(withdraw.user, withdraw.endDate, withdraw.endDate.getFirstDayOfNextMonth(), withdraw.reason)
     }
 
     fun scheduleWithdraws(user: User, beginOfPeriod: DateTime, endOfPeriod: DateTime) {
@@ -106,10 +91,7 @@ object BalanceProcessor {
     // Removing scheduled withdraws
     // Should be called in suspend activation
     fun removeScheduledWithdraws(user: User, date: DateTime) {
-        Withdraw.find {
-            Withdraws.userId eq user.id and
-                    (Withdraws.scheduledDate eq date)
-        }.toList().forEach {
+        withdrawCRUD.getScheduledWithdrawsForUser(user, date).forEach {
             it.delete()
         }
     }

@@ -30,37 +30,23 @@ class Recalculation(id: EntityID<Int>): IntEntity(id) {
     var reason by RecalculationReason referencedOn Recalculations.reasonId
 }
 
-object RecalculationsCRUD: DbQueries<RecalculationEntity, Recalculation> {
-    override fun add(entity: RecalculationEntity): EntityID<Int> {
-        return transaction {
-            Recalculation.new {
-                user = User.findById(entity.userId) ?: throw NoSuchElementException("No such user")
-                amount = entity.amount
-                beginDate = DateTime(entity.beginDate)
-                endDate = DateTime(entity.endDate)
-                operation = BalanceOperation.findById(entity.operationId ?: -1)
-                reason = RecalculationReason.findById(entity.reasonId) ?: throw NoSuchElementException("No such reason")
-            }
+object RecalculationsCRUD {
+    fun add(entity: RecalculationEntity): EntityID<Int> {
+        return Recalculation.new {
+            user = User.findById(entity.userId) ?: throw NoSuchElementException("No such user")
+            amount = entity.amount
+            beginDate = DateTime(entity.beginDate)
+            endDate = DateTime(entity.endDate)
+            operation = BalanceOperation.findById(entity.operationId ?: -1)
+            reason = RecalculationReason.findById(entity.reasonId) ?: throw NoSuchElementException("No such reason")
         }.id
     }
 
-    override fun getAll(): List<Recalculation> {
-        return transaction {
-            Recalculation.all().toList()
-        }
+    fun getAll(): List<Recalculation> {
+        return Recalculation.all().toList()
     }
 
-    override fun getById(id: Int): Recalculation {
-        return transaction {
-            Recalculation.findById(id) ?: throw NoSuchElementException("No such recalculation")
-        }
-    }
-
-    override fun updateById(id: Int, entity: RecalculationEntity) {
-        TODO("Not yet implemented")
-    }
-
-    override fun deleteById(id: Int) {
-        TODO("Not yet implemented")
+    fun getById(id: Int): Recalculation {
+        return Recalculation.findById(id) ?: throw NoSuchElementException("No such recalculation")
     }
 }

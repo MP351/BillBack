@@ -21,8 +21,8 @@ fun main() {
     BasicConfigurator.configure()
     DbSettings.db
 
-    initBalances()
-    initWithdraws()
+//    initBalances()
+//    initWithdraws()
     OutOfDateBalanceActualizer().check()
     runBlocking {
         withContext(Dispatchers.IO) {
