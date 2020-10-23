@@ -29,9 +29,10 @@ class PaymentsWatcher {
 
     private suspend fun watch() {
         while (isRunning) {
-            val unprocessedPayments = paymentsProcessor.getUnprocessedPayments()
-            balanceProcessor.processedNewPayments(unprocessedPayments)
-
+            transaction {
+                val unprocessedPayments = paymentsProcessor.getUnprocessedPayments()
+                balanceProcessor.processedNewPayments(unprocessedPayments)
+            }
             delay(refreshPeriod)
         }
     }
@@ -88,6 +89,7 @@ class OutOfDateBalanceActualizer {
             suspendsProcessor.proceedResumeForUser(user, date)
             balanceProcessor.proceedScheduledWithdrawForUser(user, date)
 
+            user.lastProcessedTime = date
             processedDay.addDays(1)
         }
     }

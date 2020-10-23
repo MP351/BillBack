@@ -23,6 +23,7 @@ fun main() {
 
 //    initBalances()
 //    initWithdraws()
+//    fillSuspends()
     OutOfDateBalanceActualizer().check()
     runBlocking {
         withContext(Dispatchers.IO) {
@@ -31,9 +32,9 @@ fun main() {
         }
     }
     Watcher("/home/maxpayne/Share/SberTest").isRunning = true
-//    embeddedServer(Netty, port = 8080) {
-//        webModule()
-//    }.start(true)
+    embeddedServer(Netty, port = 8080) {
+        webModule()
+    }.start(true)
     transaction {
 //        print(SuspendsCRUD.getSuspendsForActiveUnsuspendedUsers(DateTime(2020, 1, 1, 0, 0)))
 //        print(SuspendsProcessor.getBeginningOfPeriod(

@@ -43,7 +43,7 @@ data class LoginEntityNoPassword(val _id: Int, val login: String)
 
 // Classes with relations
 data class UserWithTariffEntity(val contractNumber: Int, val firstName: String, val lastName: String, val fatherName: String, val tariffName: String, val isActive: Boolean)
-data class UserWithTariffEntityNew(val contractNumber: Int, val firstName: String, val lastName: String, val fatherName: String, val tariff: TariffEntityDB, val isActive: Boolean)
+data class UserWithTariffEntityNew(val contractNumber: Int, val firstName: String, val lastName: String, val fatherName: String, val tariff: TariffEntityDB, val isActive: Boolean, val tariffActivationDate: Long, val isSuspended: Boolean, val lastProcessedTime: Long)
 
 
 data class BalanceOperationTypeEntity(val _id: Int? = null, val name: String)

@@ -4,31 +4,16 @@ import TariffEntity
 import TariffEntityDB
 import UserEntity
 import api.util.Response
+import db.tables.Tariff
 import db.tables.TariffCRUD
 import io.ktor.http.HttpStatusCode
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object TariffsProcessor {
     private val tariffsCRUD = TariffCRUD
-    fun getTariffs(): Response<List<TariffEntityDB>> {
-        return try {
-            val users = tariffsCRUD.getAll()
-            val hm = HashMap<String, List<TariffEntityDB>>().apply {
-                transaction {
-                    put("tariffs", users.map {
-                        TariffEntityDB(
-                                it.id.value,
-                                it.name,
-                                it.price,
-                                it.speedLimit
-                        )
-                    })
-                }
-            }
-
-            Response.Success(HttpStatusCode.OK, hm)
-        } catch (t: Throwable) {
-            Response.Failure(HttpStatusCode.BadRequest, t.message.toString())
+    fun getTariffs(): List<Tariff> {
+        return transaction {
+            Tariff.all().toList()
         }
     }
 

@@ -97,7 +97,7 @@ object SuspendsCRUD {
 
     fun getEndingSuspendForUser(user: User, dateTime: DateTime): Suspend? {
         return Suspend.find {
-            (Suspends.userId eq user.id) and (Suspends.endDate eq dateTime)
+            (Suspends.userId eq user.id) and (Suspends.endDate eq dateTime) and (Suspends.isCompleted eq false)
         }.toList().firstOrNull()
     }
 
@@ -123,7 +123,7 @@ object SuspendsCRUD {
 
     fun getSuspendsScheduledForResume(date: DateTime): List<Suspend> {
         return Suspend.find {
-            Suspends.endDate eq date
+            (Suspends.endDate eq date) and (Suspends.isCompleted eq false)
         }.toList()
     }
 

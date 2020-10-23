@@ -40,18 +40,10 @@ fun Application.webModule() {
         route("/login") {
             post {
                 val post = call.receive<LoginEntity>()
-                when(val login = LoginProcessor.getLoginByName(post.login)) {
-                    is Response.Success<LoginEntityDB> -> {
-                        val qLogin = login.data["login"]
-                        if (qLogin?.password == post.password) {
-                            call.respond(mapOf("token" to simpleJwt.sign(post.login)))
-                        } else{
-                            call.respond(HttpStatusCode.Unauthorized)
-                        }
-                    }
-                    is Response.Failure -> {
-                        call.respond(HttpStatusCode.Unauthorized)
-                    }
+                if (login(post)) {
+                    call.respond(mapOf("token" to simpleJwt.sign(post.login)))
+                } else {
+                    call.respond(HttpStatusCode.Unauthorized)
                 }
             }
         }
@@ -68,84 +60,19 @@ fun Application.webModule() {
 
             authenticate {
                 get("logins") {
-                    when (val response = LoginProcessor.getLoginsNoPassword()) {
-                        is Response.Success<*> -> {
-                            call.respond(response.code, response.data)
-                        }
-                        is Response.Failure -> {
-                            call.respond(response.code)
-                        }
-                    }
-                }
-
-                post("login") {
-                    when (val response = LoginProcessor.addLogin(call.receive())) {
-                        is Response.Success<*> -> {
-                            call.respond(response.code, response.data)
-                        }
-                        is Response.Failure -> {
-                            call.respond(response.code)
-                        }
-                    }
+                    call.respond(getLogins())
                 }
 
                 get("tariffs") {
-                    when (val response = TariffsProcessor.getTariffs()) {
-                        is Response.Success<*> -> {
-                            call.respond(response.code, response.data)
-                        }
-                        is Response.Failure -> {
-                            call.respond(response.code, response.message)
-                        }
-                    }
-                }
-
-                post("tariff") {
-                    when (val response = TariffsProcessor.addTariff(call.receive())) {
-                        is Response.Success<*> -> {
-                            call.respond(response.code, response.data)
-                        }
-                        is Response.Failure -> {
-                            call.respond(response.code)
-                        }
-                    }
+                    call.respond(getTariffs())
                 }
 
                 get("users") {
                     if (call.parameters["tariff"].equals("true"))
-                        when(val response = UsersProcessor.getUsersWithTariffs()) {
-                            is Response.Success<*> -> {
-                                call.respond(response.code, response.data)
-                            }
-                            is Response.Failure -> {
-                                call.respond(response.code, response.message)
-                            }
-                        }
+                        call.respond(getAllUsersWithTariffs())
                     else
-                        when (val response = UsersProcessor.getUsers()) {
-                            is Response.Success<*> -> {
-                                call.respond(response.code, response.data)
-                            }
-                            is Response.Failure -> {
-                                call.respond(response.code, response.message)
-                            }
-                        }
+                        call.respond(getAllUsers())
                 }
-
-                post("users") {
-//                    when (val response = UsersProcessor.addUser(call.receive())) {
-//                        is Response.Success<*> -> {
-//                            call.respond(response.code, response.data)
-//                        }
-//                        is Response.Failure -> {
-//                            call.respond(response.code)
-//                        }
-//                    }
-                }
-
-//                get("payments") {
-//                    call.respond(dbEntity.getPayments())
-//                }
             }
         }
     }

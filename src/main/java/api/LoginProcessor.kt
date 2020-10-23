@@ -4,22 +4,20 @@ import LoginEntity
 import LoginEntityDB
 import LoginEntityNoPassword
 import api.util.Response
+import db.tables.ApiUser
+import db.tables.ApiUsers
 import db.tables.ApiUsersCRUD
 import io.ktor.http.HttpStatusCode
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.transaction
+import kotlin.math.log
 
 object LoginProcessor {
     private val apiUsersCRUD = ApiUsersCRUD
 
-    fun getLogins(): Response<List<LoginEntityDB>> {
-        return try {
-            val hm = HashMap<String, List<LoginEntityDB>>().apply{
-                put("login", apiUsersCRUD.getAll().map {
-                    LoginEntityDB(it.id.value, it.login, it.password)
-                })
-            }
-            Response.Success(HttpStatusCode.OK, hm)
-        } catch (t: Throwable) {
-            Response.Failure(HttpStatusCode.BadRequest, t.message.toString())
+    fun getLogins(): List<ApiUser> {
+        return transaction {
+            ApiUser.all().toList()
         }
     }
 
@@ -48,14 +46,20 @@ object LoginProcessor {
         }
     }
 
-    fun addLogin(login: LoginEntity): Response<Int> {
-        return try {
-            val hm = HashMap<String, Int>().apply {
-                put("id", apiUsersCRUD.add(login).value)
-            }
-            Response.Success(HttpStatusCode.Created, hm)
-        } catch (t: Throwable) {
-            Response.Failure(HttpStatusCode.BadRequest, t.message.toString())
+    fun addLogin(login: LoginEntity): Int? {
+        return transaction {
+            ApiUser.new {
+                this.login = login.login
+                this.password = login.password
+            }.id.value
+        }
+    }
+
+    fun getLoginByName(entity: LoginEntity): ApiUser? {
+        return transaction {
+            ApiUser.find {
+                (ApiUsers.login eq entity.login) and (ApiUsers.password eq entity.password)
+            }.firstOrNull()
         }
     }
 }

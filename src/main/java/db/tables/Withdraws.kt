@@ -73,13 +73,13 @@ object WithdrawsCRUD {
     fun getScheduledWithdrawsForUser(user: User, date: DateTime): List<Withdraw> {
         return Withdraw.find {
             Withdraws.userId eq user.id and
-                    (Withdraws.scheduledDate eq date)
+                    (Withdraws.scheduledDate eq date) and (Withdraws.operationId.isNull())
         }.toList()
     }
 
     fun getScheduledWithdraws(date: DateTime): List<Withdraw> {
         return Withdraw.find {
-            Withdraws.scheduledDate eq date
+            (Withdraws.scheduledDate eq date) and (Withdraws.operationId.isNull())
         }.toList()
     }
 }
